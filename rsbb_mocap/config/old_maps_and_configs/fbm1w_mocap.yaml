@@ -1,0 +1,12 @@
+rigid_bodies:
+    '1':
+        pose: origin/pose
+        pose2d: origin/pose2d
+        child_frame_id: origin
+        parent_frame_id: world
+    '2':
+        pose: ref_board/pose
+        pose2d: ref_board/pose2d
+        child_frame_id: ref_board
+        parent_frame_id: world
+

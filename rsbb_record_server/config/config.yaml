@@ -1,0 +1,7 @@
+base_directory: "~/test_logs/"
+topic_list:
+- "topic1"
+- "topic2"
+- "/test1"
+- "/test_hello/world"
+- "/hi"

@@ -1,0 +1,4 @@
+std_msgs/String request
+std_msgs/Float32 timeout
+---
+std_msgs/Bool result

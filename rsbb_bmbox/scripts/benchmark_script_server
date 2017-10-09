@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+from benchmark_scripts import *
+import benchmark_scripts
+import rospy
+import actionlib
+from rsbb_benchmarking_messages.srv import *
+
+scripts = {}
+execute_request = None
+
+def import_benchmark_scripts():
+	
+	global scripts
+	
+	print "imported scripts:"
+	
+	for module_name in benchmark_scripts.__all__:
+		module = globals()[module_name]
+		scripts[module.script_object.benchmark_code] = module.script_object
+		
+		print module.script_object.benchmark_code
+
+
+class BenchmarkServer(object):
+	
+	def __init__(self, name):
+		self._topic_name = name
+		self._benchmark_request_service_server = rospy.Service(self._topic_name, BenchmarkRequest, self.execute_benchmark_callback)
+#		rospy.Subscriber(self._topic_name, BenchmarkRequest, self.execute_benchmark_callback)
+		
+	def execute_benchmark_callback(self, request):
+		
+		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t robot: %s\t run: %i' % (request.benchmark_code, request.team, request.robot, request.run))
+		
+		global execute_request
+		
+		execute_request = request.benchmark_code
+		
+		return BenchmarkRequestResponse(True)
+
+
+
+		
+
+
+def init_server():
+	global execute_request
+	
+	rospy.init_node('rsbb_benchmark_server')
+	rate = rospy.Rate(1) # 10hz
+	
+	import_benchmark_scripts()
+	
+	server = BenchmarkServer("init_benchmark")
+	
+	print "\nready to execute imported benchmark scripts"
+	
+	while not rospy.is_shutdown():
+		
+		if execute_request:
+			print "start execute()"
+			scripts[execute_request].execute()
+			execute_request = None
+			print "finished execute()"
+			
+#		print "\nready to execute imported benchmark scripts"
+		
+		rate.sleep()
+
+	
+#	rospy.spin()
+
+if __name__ == '__main__':
+	try:
+		init_server()
+	except rospy.ROSInterruptException:
+		pass

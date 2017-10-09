@@ -1,0 +1,43 @@
+<launch>
+
+	<group ns="home">
+		<node pkg="tf"
+			type="static_transform_publisher"
+			name="world_map_bc"
+			args="0 0 0 0 0 0 world map 100"
+		/>
+		
+		<node name="map_server"
+			pkg="map_server"
+			type="map_server"
+			args="$(find rockin_mocap)/config/lisbon_home_testbed_map.yaml"
+		/>
+
+		<node name="mocap_node"
+			type="mocap_node"
+			pkg="mocap_optitrack" 
+			respawn="false"
+			launch-prefix=""
+			required="true">
+			<rosparam file="$(find rockin_mocap)/config/all_home_mocap.yaml" command="load" />
+		</node>
+
+		<node pkg="rosbag"
+			type="record"
+			name="log_mocap_home"
+			args="record -o /home/rockin/logs/log_home_mocap
+				--split --duration=1h
+				/home/map
+				/home/map_metadata
+				/home/robot_at_home/pose
+				/home/robot_at_home/pose2d
+				/home/origin/pose
+				/home/origin/pose2d
+				/home/ref_board/pose
+				/home/ref_board/pose2d
+				/tf
+				/rosout"
+		/>
+
+	</group>      
+</launch>
