@@ -45,7 +45,7 @@ class FSM:
 			self._condvar.wait()
 		while (to_state != None) and self._state != to_state:
 			self._condvar.wait()
-		self._condvar.release()	
+		self._condvar.release()
 
 
 	def update(self, new_state, payload = None):

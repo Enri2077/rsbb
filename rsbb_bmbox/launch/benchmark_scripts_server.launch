@@ -5,6 +5,7 @@
 			pkg="rsbb_bmbox"
 			type="benchmark_script_server"
 			output="screen"
+			respawn="true"
 		/>
 		
 		<!--

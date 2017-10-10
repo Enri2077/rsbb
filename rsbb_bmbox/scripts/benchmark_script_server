@@ -7,6 +7,10 @@ import benchmark_scripts
 import rospy
 import actionlib
 from rsbb_benchmarking_messages.srv import *
+from rockin_scoring.BenchmarkObject import *
+#from inspect import *
+from exceptions import Exception
+
 
 scripts = {}
 execute_request = None
@@ -19,9 +23,42 @@ def import_benchmark_scripts():
 	
 	for module_name in benchmark_scripts.__all__:
 		module = globals()[module_name]
-		scripts[module.script_object.benchmark_code] = module.script_object
 		
-		print module.script_object.benchmark_code
+		try:
+			
+			benchmark_object = module.BenchmarkObject()
+			benchmark_code = ""
+			
+			try:
+				
+				benchmark_code = benchmark_object.get_benchmark_code()
+				
+			except AttributeError:
+				raise BenchmarkCodeNotImplementedError("method get_benchmark_code not implemented in BenchmarkObject")
+				#TODO publish benchmark_script_server SystemStatus.ERROR
+				
+			except TypeError:
+				raise BenchmarkCodeNotImplementedError("Wrong number of attributes in get_benchmark_code method")
+				#TODO publish benchmark_script_server SystemStatus.ERROR
+				
+			
+			if type(benchmark_code) != type(""):
+				print "type(benchmark_code) != type(\"\")"
+				raise BenchmarkCodeNotImplementedError("Method get_benchmark_code in BenchmarkObject should return a string")
+			
+			scripts[benchmark_code] = benchmark_object
+			
+			print benchmark_code
+			
+			
+		except BenchmarkCodeNotImplementedError as e:
+			print e.parameter
+			rospy.logerr("Error from script [%s]: %s", module_name, e.parameter)
+			
+		except ExecuteMethodNotImplementedError:
+			rospy.logerr("NotImplementedError Exception")
+
+
 
 
 class BenchmarkServer(object):
@@ -29,8 +66,7 @@ class BenchmarkServer(object):
 	def __init__(self, name):
 		self._topic_name = name
 		self._benchmark_request_service_server = rospy.Service(self._topic_name, BenchmarkRequest, self.execute_benchmark_callback)
-#		rospy.Subscriber(self._topic_name, BenchmarkRequest, self.execute_benchmark_callback)
-		
+	
 	def execute_benchmark_callback(self, request):
 		
 		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t robot: %s\t run: %i' % (request.benchmark_code, request.team, request.robot, request.run))
@@ -39,11 +75,10 @@ class BenchmarkServer(object):
 		
 		execute_request = request.benchmark_code
 		
+		#TODO return false if request.benchmark_code not in scripts
+		
 		return BenchmarkRequestResponse(True)
 
-
-
-		
 
 
 def init_server():
@@ -61,20 +96,39 @@ def init_server():
 	while not rospy.is_shutdown():
 		
 		if execute_request:
-			print "start execute()"
-			scripts[execute_request].execute()
+			try:
+				
+				print "start execute()"
+				scripts[execute_request].execute()
+				
+			except ExecuteMethodNotImplementedError:
+				rospy.logerr("Error for execute request [%s]: method execute(self) not implemented in BenchmarkObject", execute_request)
+				#TODO publish benchmark_script_server SystemStatus.ERROR
+				
+			except Exception:
+				rospy.logerr("Exception raised in benchmark script [%s]. Benchmark script terminated", execute_request)
+				#TODO publish benchmark_script_server SystemStatus.ERROR
+			
 			execute_request = None
 			print "finished execute()"
 			
-#		print "\nready to execute imported benchmark scripts"
+			return
 		
 		rate.sleep()
 
-	
-#	rospy.spin()
 
 if __name__ == '__main__':
 	try:
 		init_server()
 	except rospy.ROSInterruptException:
 		pass
+		
+
+
+
+
+
+
+
+
+

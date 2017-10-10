@@ -31,6 +31,7 @@ class BmBox:
 		if self._refbox_state.benchmark_state in self._exception_states\
 		or self._refbox_state.goal_execution_state in self._exception_states\
 		or self._refbox_state.manual_operation_state in self._exception_states:
+			rospy.loginfo("setting state to BmBoxState.END")
 			self._fsm.update(BmBoxState.END, None)
 	
 	def publish_system_status(self, d = ""):
@@ -40,6 +41,12 @@ class BmBox:
 	
 	def WaitClient(self):
 		rospy.logdebug("BmBox.WaitClient()")
+		
+		if rospy.is_shutdown(): return
+		
+		if self._fsm.state() == BmBoxState.END:
+			rospy.loginfo("Benchmark terminated, doing nothing")
+			return
 		
 		if not self._fsm.check_state(BmBoxState.START): return
 		
@@ -51,11 +58,19 @@ class BmBox:
 	def ManualOperation(self, message=None):
 		rospy.logdebug("BmBox.ManualOperation()")
 		
+		if rospy.is_shutdown(): return
+		
+		if self._fsm.state() == BmBoxState.END:
+			rospy.loginfo("Benchmark terminated, doing nothing")
+			return
+		
 		if not ((self._fsm.state() == BmBoxState.READY) or (self._fsm.state() == BmBoxState.COMPLETED_MANUAL_OPERATION)):
 			rospy.logerr("ManualOperation: expected to be in state BmBoxState.READY or BmBoxState.COMPLETED_MANUAL_OPERATION")
+			return
 		
 		if not (self._refbox_state.manual_operation_state == RefBoxState.READY):
 			rospy.logerr("ManualOperation: refbox expected to be in state RefBoxState.READY")
+			return
 		
 		self._fsm.update(BmBoxState.WAITING_MANUAL_OPERATION, message)
 		
@@ -86,11 +101,19 @@ class BmBox:
 	def SendGoal(self, goal = "", timeout = 0):
 		rospy.logdebug("BmBox.SendGoal()")
 		
+		if rospy.is_shutdown(): return
+		
+		if self._fsm.state() == BmBoxState.END:
+			rospy.loginfo("Benchmark terminated, doing nothing")
+			return
+		
 		if not (self._fsm.state() == BmBoxState.READY):
 			rospy.logerr("SendGoal: expected to be in state BmBoxState.READY")
+			return
 		
 		if not (self._refbox_state.goal_execution_state in [RefBoxState.READY, RefBoxState.GOAL_TIMEOUT]):
 			rospy.logerr("SendGoal: refbox expected to be in states RefBoxState.READY or RefBoxState.GOAL_TIMEOUT")
+			return
 		
 		rospy.loginfo("Sending goal...")
 		self._fsm.update(BmBoxState.TRANSMITTING_GOAL, goal)
@@ -120,13 +143,21 @@ class BmBox:
 		return self._refbox_state.goal_execution_payload
 	
 	def WaitResult(self):
-		rospy.logdebug("BmBox.WaitResult()")
+		rospy.loginfo("BmBox.WaitResult()")
+		
+		if rospy.is_shutdown(): return
+		
+		if self._fsm.state() == BmBoxState.END:
+			rospy.loginfo("Benchmark terminated, doing nothing")
+			return
 		
 		if not (self._fsm.state() == BmBoxState.EXECUTING_GOAL):
 			rospy.logerr("WaitResult: expected to be in state BmBoxState.EXECUTING_GOAL")
+			return
 		
 		if not (self._refbox_state.goal_execution_state in [RefBoxState.EXECUTING_GOAL, RefBoxState.GOAL_TIMEOUT]):
 			rospy.logerr("WaitResult: refbox expected to be in state RefBoxState.EXECUTING_GOAL or RefBoxState.GOAL_TIMEOUT")
+			return
 		
 		self._fsm.update(BmBoxState.WAITING_RESULT)
 		self._refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.EXECUTING_GOAL, to_states = [RefBoxState.READY, RefBoxState.GOAL_TIMEOUT])
@@ -137,13 +168,21 @@ class BmBox:
 	def SendScore(self, score):
 		rospy.logdebug("BmBox.SendScore()")
 		
+		if rospy.is_shutdown(): return
+		
+		if self._fsm.state() == BmBoxState.END:
+			rospy.loginfo("Benchmark terminated, doing nothing")
+			return
+		
 		if not (self._fsm.state() == BmBoxState.READY):
 			rospy.logerr("SendScore: expected to be in state BmBoxState.READY")
+			return
 		
-		if not (self._refbox_state.benchmark_state == RefBoxState.EXECUTING_BENCHMARK\
+		if not (self._refbox_state.benchmark_state == RefBoxState.EXECUTING_BENCHMARK \
 		and self._refbox_state.goal_execution_state in [RefBoxState.READY, RefBoxState.GOAL_TIMEOUT]
 		and	self._refbox_state.manual_operation_state == RefBoxState.READY):
 			rospy.logerr("SendScore: refbox expected to be in state RefBoxState.EXECUTING_BENCHMARK and (RefBoxState.READY or RefBoxState.GOAL_TIMEOUT)")
+			return
 		
 		self._fsm.update(BmBoxState.TRANSMITTING_SCORE, score)
 		
@@ -169,11 +208,13 @@ class BmBox:
 	
 	def isGoalTimedout(self):
 		rospy.logdebug("BmBox.Timeout()")
-		
+				
 		return self._refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT
 	
 	def End(self):
 		rospy.logdebug("BmBox.End()")
+		
+		if rospy.is_shutdown(): return
 		
 		self._fsm.update(BmBoxState.END)
 		
@@ -184,11 +225,12 @@ class BmBox:
 		return not self.isBenchmarkEnded()
 	
 	def isBenchmarkEnded(self):
-	
-		return self._refbox_state.benchmark_state in self._exception_states\
-		or     self._refbox_state.goal_execution_state in self._exception_states\
-		or     self._refbox_state.manual_operation_state in self._exception_states\
+		return rospy.is_shutdown() \
+		or     self._refbox_state.benchmark_state in self._exception_states \
+		or     self._refbox_state.goal_execution_state in self._exception_states \
+		or     self._refbox_state.manual_operation_state in self._exception_states \
 		or     self._fsm.state() == BmBoxState.END
+		
 	
 	def getEndReason(self):
 		if   self._refbox_state.benchmark_state == RefBoxState.END:            return 'END: benchmark ended normally'
@@ -196,7 +238,7 @@ class BmBox:
 		elif self._refbox_state.benchmark_state == RefBoxState.EMERGENCY_STOP: return 'EMERGENCY_STOP: benchmark stopped due to emergency'
 		elif self._refbox_state.benchmark_state == RefBoxState.ERROR:          return 'ERROR: benchmark terminated due to RefBox error'
 		elif self._refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT: return 'GLOBAL_TIMEOUT: benchmark ended due to global timeout'
-		else:                                                  return 'not ended or unnown reason'
+		else:                                                                  return 'not ended or unnown reason'
 	
 	def __init__(self):
 		self._fsm = FSM(
