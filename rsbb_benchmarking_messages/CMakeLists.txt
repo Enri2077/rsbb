@@ -26,6 +26,7 @@ add_service_files(
   EndBenchmark.srv
   BenchmarkRequest.srv
   StopRecordRequest.srv
+  TerminateBenchmarkScript.srv
 )
 
 generate_messages(

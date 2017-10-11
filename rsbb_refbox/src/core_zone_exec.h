@@ -513,7 +513,7 @@ class ExecutingExternallyControlledBenchmark: public ExecutingSingleRobotBenchma
 	Publisher record_request_publisher_;
 	Publisher system_status_publisher_;
 	Subscriber bmbox_state_subscriber_, bmbox_status_subscriber_, record_server_status_subscriber_;
-	ServiceClient benchmark_request_service_client_;
+	ServiceClient benchmark_request_service_client_, terminate_benchmark_script_service_client_;
 	ServiceClient stop_record_service_client_;
 
 	RecordRequest record_request_;
@@ -551,6 +551,7 @@ public:
 		bmbox_status_subscriber_(ss_.nh.subscribe("/rsbb_system_status/bmbox", 1, &ExecutingExternallyControlledBenchmark::bmbox_status_callback, this)),
 		record_server_status_subscriber_(ss_.nh.subscribe("/rsbb_system_status/record_server", 1, &ExecutingExternallyControlledBenchmark::record_server_status_callback, this)),
 		benchmark_request_service_client_(ss_.nh.serviceClient<BenchmarkRequest>("init_benchmark")),
+		terminate_benchmark_script_service_client_(ss_.nh.serviceClient<TerminateBenchmarkScript>("terminate_benchmark_script")),
 		stop_record_service_client_(ss_.nh.serviceClient<StopRecordRequestRequest>("/record_server/stop_record_request")),
 
 		timeout_timer_(ss, event_.benchmark.timeout, true, boost::bind(&ExecutingExternallyControlledBenchmark::goal_timeout_callback, this)),
@@ -569,8 +570,8 @@ public:
 		BenchmarkRequest benchmark_request;
 		benchmark_request.request.benchmark_code = event_.benchmark_code;
 		benchmark_request.request.team = event_.team;
-		benchmark_request.request.robot = "TODO";
-		benchmark_request.request.run = 0; // TODO
+		benchmark_request.request.robot = "";
+		benchmark_request.request.run = event_.run;
 		if (benchmark_request_service_client_.call(benchmark_request)){
 			ROS_INFO("Called service init_benchmark: %s", (benchmark_request.response.result)?"true":"false");
 
@@ -589,7 +590,7 @@ public:
 		record_request_.benchmark_code = event_.benchmark_code;
 		record_request_.team = event_.team;
 		record_request_.robot = "";
-		record_request_.run = 0; // TODO
+		record_request_.run = event_.run;
 		record_request_publisher_.publish(record_request_);
 
 	}
@@ -877,6 +878,13 @@ public:
 		timeout_timer_.stop_pause(Time());
 		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
 
+		TerminateBenchmarkScript terminate_benchmark_script_request;
+		if (terminate_benchmark_script_service_client_.call(terminate_benchmark_script_request)){
+			ROS_INFO("Called stop_record service");
+			if(!terminate_benchmark_script_request.response.result) ROS_INFO("benchmark script server refused to terminate benchmark script");
+		}else{
+			ROS_ERROR("Failed to call terminate_benchmark_script service");
+		}
 
 		StopRecordRequest stop_record_request;
 		if (stop_record_service_client_.call(stop_record_request)){
@@ -889,7 +897,6 @@ public:
 		record_request_ = RecordRequest();
 		record_request_.record = false;
 		record_request_publisher_.publish(record_request_);
-
 
 		stop_communication();
 		end_();

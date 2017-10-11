@@ -109,8 +109,10 @@ class StateObserver:
 
 
 
-
-
+	def notify_condition_variables(self):
+		self._condvar.acquire()
+		self._condvar.notifyAll()
+		self._condvar.release()
 
 	def update(self, new_state):
 		self._condvar.acquire()
@@ -124,9 +126,9 @@ class StateObserver:
 		self._condvar.release()
 	
 	
-	def __init__(self, except_states):
+	def __init__(self, except_states, initial_state):
 		rospy.logdebug("StateObserver init")
-		self._state = None
+		self._state = initial_state
 		self._except_states = except_states
 		
 		self._condvar = Condition()

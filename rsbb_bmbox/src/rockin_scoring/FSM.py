@@ -47,6 +47,10 @@ class FSM:
 			self._condvar.wait()
 		self._condvar.release()
 
+	def notify_condition_variables(self):
+		self._condvar.acquire()
+		self._condvar.notifyAll()
+		self._condvar.release()
 
 	def update(self, new_state, payload = None):
 		if not self._check_transition(new_state):

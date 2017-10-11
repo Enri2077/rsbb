@@ -15,7 +15,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 #	def get_benchmark_code(self): return 5 ### test
 	
 	def get_benchmark_code(self): return "STB"
-	
+		
 #	def execute_(self): ### test
 #	def execute(self, hello): ### test
 	def execute(self):
@@ -23,7 +23,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 		BENCHMARK_RUNS = 2
 		
 		# Init benchmarking node
-		benchmark = BmBox()
+#		self.benchmark = BmBox()
 		rospy.loginfo("simple_test_benchmark benchmarking node started")
 		
 		# Variables to compute score
@@ -33,12 +33,12 @@ class BenchmarkObject (BaseBenchmarkObject):
 		print "Waiting for Client"
 		
 		# Wait for client
-		benchmark.WaitClient()
+		self.WaitClient()
 		
 		print "Client connected"
 		
 		# Start the benchmark
-		while benchmark.isBenchmarkRunning() and (runs < BENCHMARK_RUNS):
+		while self.isBenchmarkRunning() and (runs < BENCHMARK_RUNS):
 			runs = runs + 1
 			
 			now = rospy.Time.now()
@@ -54,12 +54,12 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			# Send goal
 			print "Sending goal: %s" % goal_yaml_string
-			benchmark.SendGoal(goal_yaml_string, 100)
-#			benchmark.SendGoal() #TODO test this one
+			self.SendGoal(goal_yaml_string, 100)
+#			self.SendGoal() #TODO test this one
 			start_time = time.time()
 			
 			# Wait for result from client
-			result_yaml = benchmark.WaitResult()
+			result_yaml = self.WaitResult()
 			end_time = time.time()
 			
 			print "Received result_yaml:", result_yaml
@@ -70,14 +70,14 @@ class BenchmarkObject (BaseBenchmarkObject):
 #			x = 1/0
 			
 			
-			if benchmark.isGoalTimedout():
+			if self.isGoalTimedout():
 				print "GOAL TIMEOUT"
 				execution_time = execution_time + (end_time - start_time)
 				continue
 			
-			if benchmark.isBenchmarkEnded():
+			if self.isBenchmarkEnded():
 				print "BENCHMARK ENDED"
-				print benchmark.getEndReason()
+				print self.getEndReason()
 				break
 			
 			if result_yaml:
@@ -89,9 +89,9 @@ class BenchmarkObject (BaseBenchmarkObject):
 			rospy.loginfo("Execution time - %f" % execution_time)
 		
 		
-		if not benchmark.isBenchmarkEnded():
+		if not self.isBenchmarkEnded():
 			print "Starting final Manual Operation"
-			manual_operation_result = benchmark.ManualOperation("Notes from the referee:")
+			manual_operation_result = self.ManualOperation("Notes from the referee:")
 			print "Finished final Manual Operation: %s" % manual_operation_result
 			
 			# Evaluate final score
@@ -102,11 +102,11 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			print "Score:", score
 			score_yaml = yaml.dump(score)
-			benchmark.SendScore(score_yaml)
+			self.SendScore(score_yaml)
 		
 		else:
 			print "Benchmark ended!!!!"
 		
 		# Benchmark concluded
-		benchmark.End()
+		self.End()
 

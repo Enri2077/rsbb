@@ -51,6 +51,7 @@
 #include <rsbb_benchmarking_messages/BenchmarkRequest.h>
 #include <rsbb_benchmarking_messages/RecordRequest.h>
 #include <rsbb_benchmarking_messages/StopRecordRequest.h>
+#include <rsbb_benchmarking_messages/TerminateBenchmarkScript.h>
 #include <rsbb_benchmarking_messages/SystemStatus.h>
 #include <roah_devices/Bool.h>
 #include <roah_devices/DevicesState.h>

@@ -15,7 +15,8 @@ class BmBox:
 	def _pub_thread(self):
 		r = rospy.Rate(STATE_UPDATE_RATE)
 		
-		while (self._fsm.state() != BmBoxState.END) and (not rospy.is_shutdown()):
+#		while (self._fsm.state() != BmBoxState.END) and (not rospy.is_shutdown()):
+		while not rospy.is_shutdown():
 			self._state_pub.publish(self._fsm.state(), self._fsm.payload())
 			self.publish_system_status()
 			r.sleep()
@@ -219,8 +220,12 @@ class BmBox:
 		self._fsm.update(BmBoxState.END)
 		
 		self._refbox_state_sub.unregister()
-		
 	
+	
+	
+	def isWaitingToStart(self):
+		return self._fsm.state() in [BmBoxState.START, BmBoxState.WAITING_CLIENT]
+		
 	def isBenchmarkRunning(self):
 		return not self.isBenchmarkEnded()
 	
@@ -231,7 +236,6 @@ class BmBox:
 		or     self._refbox_state.manual_operation_state in self._exception_states \
 		or     self._fsm.state() == BmBoxState.END
 		
-	
 	def getEndReason(self):
 		if   self._refbox_state.benchmark_state == RefBoxState.END:            return 'END: benchmark ended normally'
 		elif self._refbox_state.benchmark_state == RefBoxState.STOP:           return 'STOP: benchmark stopped by referee'
@@ -240,7 +244,28 @@ class BmBox:
 		elif self._refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT: return 'GLOBAL_TIMEOUT: benchmark ended due to global timeout'
 		else:                                                                  return 'not ended or unnown reason'
 	
+	
+	
+	
+	def can_terminate_benchmark(self):
+		return self.isBenchmarkEnded() or self.isWaitingToStart()
+	
+	def terminate_benchmark(self):
+		if self.can_terminate_benchmark():
+			print "signal_shutdown(\"Benchmark terminated\")"
+			
+			rospy.signal_shutdown("Benchmark terminated")
+			self._fsm.notify_condition_variables()
+			self._refbox_state_observer.notify_condition_variables()
+	
+	
+	
+	
+	
 	def __init__(self):
+		
+		print "BmBox.__init__(self)"
+		
 		self._fsm = FSM(
 			('START', 'WAITING_CLIENT', 'READY', 'WAITING_MANUAL_OPERATION', 'COMPLETED_MANUAL_OPERATION', 'TRANSMITTING_GOAL', 'EXECUTING_GOAL', 'WAITING_RESULT', 'TRANSMITTING_SCORE', 'END'),
 			(
@@ -270,7 +295,7 @@ class BmBox:
 		self._state_pub = rospy.Publisher("bmbox_state", BmBoxState, queue_size=10)
 		self._status_pub = rospy.Publisher("/rsbb_system_status/bmbox", SystemStatus, queue_size=10)
 		
-		self._refbox_state_observer = StateObserver(self._exception_states)
+		self._refbox_state_observer = StateObserver(self._exception_states, self._refbox_state)
 
 		self._pub_thread = Thread(name="pub_thread", target=self._pub_thread)
 		self._pub_thread.start()
