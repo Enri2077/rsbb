@@ -20,28 +20,20 @@
 #include "ros/ros.h"
 #include "std_srvs/Empty.h"
 
-
-
 using namespace std;
 using namespace ros;
 
-
-
-bool shutdown_handler (std_srvs::Empty::Request&  req, std_srvs::Empty::Response& res)
-{
-  requestShutdown();
-  return true;
+bool shutdown_handler(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+	requestShutdown();
+	return true;
 }
 
+int main(int argc, char** argv) {
+	init(argc, argv, "roah_rsbb_shutdown");
+	NodeHandle nh;
 
+	ServiceServer service = nh.advertiseService("roah_rsbb_shutdown", shutdown_handler);
+	spin();
 
-int main (int argc, char** argv)
-{
-  init (argc, argv, "roah_rsbb_shutdown");
-  NodeHandle nh;
-
-  ServiceServer service = nh.advertiseService ("roah_rsbb_shutdown", shutdown_handler);
-  spin();
-
-  return 0;
+	return 0;
 }

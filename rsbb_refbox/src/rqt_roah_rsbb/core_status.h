@@ -29,30 +29,25 @@
 #include <roah_rsbb/CoreToGui.h>
 #include "topic_receiver.h"
 
+namespace rqt_roah_rsbb {
+class CoreStatus: public rqt_gui_cpp::Plugin {
+Q_OBJECT
 
+public:
+	CoreStatus();
+	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+	virtual void shutdownPlugin();
 
-namespace rqt_roah_rsbb
-{
-  class CoreStatus
-    : public rqt_gui_cpp::Plugin
-  {
-      Q_OBJECT
+private:
+	Ui::CoreStatus ui_;
+	QWidget* widget_;
+	QTimer update_timer_;
+	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
 
-    public:
-      CoreStatus();
-      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
-      virtual void shutdownPlugin();
-
-    private:
-      Ui::CoreStatus ui_;
-      QWidget* widget_;
-      QTimer update_timer_;
-      TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
-
-    private slots:
-      void update();
-      void exit();
-  };
+private slots:
+	void update();
+	void exit();
+};
 }
 
 #endif

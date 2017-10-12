@@ -22,69 +22,48 @@
 
 #include "core_includes.h"
 
+class add_to_sting: public ostringstream {
+	string& s_;
 
+public:
+	add_to_sting(string& s) :
+			ostringstream(), s_(s) {
+		(*this) << s;
+		if (!s.empty()) {
+			(*this) << endl;
+		}
+	}
 
-class add_to_sting
-  : public ostringstream
-{
-    string& s_;
-
-  public:
-    add_to_sting (string& s)
-      : ostringstream ()
-      , s_ (s)
-    {
-      (*this) << s;
-      if (! s.empty()) {
-        (*this) << endl;
-      }
-    }
-
-    ~add_to_sting()
-    {
-      s_ = str();
-    }
+	~add_to_sting() {
+		s_ = str();
+	}
 };
 
+void abort_rsbb() {
+	if (service::waitForService("roah_rsbb_shutdown", 500)) {
+		std_srvs::Empty s;
+		if (!service::call("roah_rsbb_shutdown", s)) {
+			ROS_ERROR("Error calling roah_rsbb_shutdown service");
+		}
+	} else {
+		ROS_ERROR("Could not find roah_rsbb_shutdown service");
+	}
 
+	shutdown();
 
-void
-abort_rsbb()
-{
-  if (service::waitForService ("roah_rsbb_shutdown", 500)) {
-    std_srvs::Empty s;
-    if (! service::call ("roah_rsbb_shutdown", s)) {
-      ROS_ERROR ("Error calling roah_rsbb_shutdown service");
-    }
-  }
-  else {
-    ROS_ERROR ("Could not find roah_rsbb_shutdown service");
-  }
-
-  shutdown();
-
-  abort();
+	abort();
 }
 
-
-
-template<typename T> T
-yamlschedget (YAML::Node const& node,
-              string const& key)
-{
-  if (! node[key]) {
-    ROS_FATAL_STREAM ("Schedule file is missing a \"" << key << "\" entry!");
-    abort_rsbb();
-  }
-  return node[key].as<T>();
+template<typename T> T yamlschedget(YAML::Node const& node, string const& key) {
+	if (!node[key]) {
+		ROS_FATAL_STREAM("Schedule file is missing a \"" << key << "\" entry!");
+		abort_rsbb();
+	}
+	return node[key].as<T>();
 }
 
-
-
-string
-to_string (Time const& time)
-{
-  return boost::posix_time::to_simple_string (boost::date_time::c_local_adjustor<boost::posix_time::ptime>::utc_to_local (time.toBoost()));
+string to_string(Time const& time) {
+	return boost::posix_time::to_simple_string(boost::date_time::c_local_adjustor<boost::posix_time::ptime>::utc_to_local(time.toBoost()));
 }
 
 #endif

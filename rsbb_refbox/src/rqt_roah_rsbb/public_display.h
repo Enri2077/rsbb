@@ -29,31 +29,26 @@
 #include <roah_rsbb/UInt8.h>
 #include <roah_rsbb/CoreToPublic.h>
 
+class PublicDisplay: public QMainWindow {
+Q_OBJECT
 
+public:
+	explicit PublicDisplay();
+	~PublicDisplay();
 
-class PublicDisplay
-  : public QMainWindow
-{
-    Q_OBJECT
+private:
+	ros::NodeHandle nh_;
+	Ui::PublicDisplay ui_;
+	QTimer update_timer_;
+	ros::ServiceServer screen_srv_;
+	ros::Subscriber core_to_public_sub_;
 
-  public:
-    explicit PublicDisplay();
-    ~PublicDisplay();
+	bool set_screen(roah_rsbb::UInt8::Request& req, roah_rsbb::UInt8::Response& res);
 
-  private:
-    ros::NodeHandle nh_;
-    Ui::PublicDisplay ui_;
-    QTimer update_timer_;
-    ros::ServiceServer screen_srv_;
-    ros::Subscriber core_to_public_sub_;
+	void core_to_public(roah_rsbb::CoreToPublic::ConstPtr const& msg);
 
-    bool set_screen (roah_rsbb::UInt8::Request& req,
-                     roah_rsbb::UInt8::Response& res);
-
-    void core_to_public (roah_rsbb::CoreToPublic::ConstPtr const& msg);
-
-  private slots:
-    void update();
+private slots:
+	void update();
 };
 
 #endif

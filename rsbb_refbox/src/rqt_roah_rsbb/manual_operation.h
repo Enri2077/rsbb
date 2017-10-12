@@ -29,32 +29,27 @@
 #include <roah_rsbb/CoreToGui.h>
 #include "topic_receiver.h"
 
+namespace rqt_roah_rsbb {
+class ManualOperation: public rqt_gui_cpp::Plugin {
+Q_OBJECT
 
+public:
+	ManualOperation();
+	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+	virtual void shutdownPlugin();
 
-namespace rqt_roah_rsbb
-{
-  class ManualOperation
-    : public rqt_gui_cpp::Plugin
-  {
-      Q_OBJECT
+private:
+	Ui::ManualOperation ui_;
+	QWidget* widget_;
+	QTimer update_timer_;
+	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
+	QPalette default_palette_;
+	QPalette warn_palette_;
 
-    public:
-      ManualOperation();
-      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
-      virtual void shutdownPlugin();
-
-    private:
-      Ui::ManualOperation ui_;
-      QWidget* widget_;
-      QTimer update_timer_;
-      TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
-      QPalette default_palette_;
-      QPalette warn_palette_;
-
-    private slots:
-      void update();
-      void complete();
-  };
+private slots:
+	void update();
+	void complete();
+};
 }
 
 #endif

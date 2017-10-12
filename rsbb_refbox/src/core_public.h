@@ -26,64 +26,52 @@
 #include "core_public_channel.h"
 #include "core_zone_manager.h"
 
+class CorePublic: boost::noncopyable {
+	CoreSharedState& ss_;
+	CoreZoneManager& zone_manager_;
 
+	Publisher pub_;
+	Timer pub_timer_;
 
-class CorePublic
-  : boost::noncopyable
-{
-    CoreSharedState& ss_;
-    CoreZoneManager& zone_manager_;
+	Time relevant_time_;
 
-    Publisher pub_;
-    Timer pub_timer_;
+	void transmit(const TimerEvent& = TimerEvent()) {
+		Time now = Time::now();
 
-    Time relevant_time_;
+		auto msg = boost::make_shared<roah_rsbb::CoreToPublic>();
+		msg->clock = to_string(Time(now.sec, 0));
 
-    void
-    transmit (const TimerEvent& = TimerEvent())
-    {
-      Time now = Time::now();
+		multimap<Time, roah_rsbb::ScheduleInfo> map;
+		zone_manager_.msg(now, map);
+		for (auto const& i : map) {
+			if (i.second.running) {
+				relevant_time_ = i.first;
+				break;
+			}
+		}
+		{
+			multimap<Time, roah_rsbb::ScheduleInfo>::iterator i = map.begin();
+			while (i != map.end()) {
+				if (i->first < relevant_time_) {
+					i = map.erase(i);
+				} else {
+					break;
+				}
+			}
+		}
+		for (auto const& i : map) {
+			msg->schedule.push_back(i.second);
+		}
 
-      auto msg = boost::make_shared<roah_rsbb::CoreToPublic>();
-      msg->clock = to_string (Time (now.sec, 0));
+		pub_.publish(msg);
+	}
 
-      multimap<Time, roah_rsbb::ScheduleInfo> map;
-      zone_manager_.msg (now, map);
-      for (auto const& i : map) {
-        if (i.second.running) {
-          relevant_time_ = i.first;
-          break;
-        }
-      }
-      {
-        multimap<Time, roah_rsbb::ScheduleInfo>::iterator i = map.begin();
-        while (i != map.end()) {
-          if (i->first < relevant_time_) {
-            i = map.erase (i);
-          }
-          else {
-            break;
-          }
-        }
-      }
-      for (auto const& i : map) {
-        msg->schedule.push_back (i.second);
-      }
-
-      pub_.publish (msg);
-    }
-
-  public:
-    CorePublic (CoreSharedState& ss,
-                CoreZoneManager& zone_manager)
-      : ss_ (ss)
-      , zone_manager_ (zone_manager)
-      , pub_ (ss_.nh.advertise<roah_rsbb::CoreToPublic> ("/core/to_public", 1, true))
-      , pub_timer_ (ss_.nh.createTimer (Duration (0.5), &CorePublic::transmit, this))
-      , relevant_time_ (TIME_MIN)
-    {
-      transmit();
-    }
+public:
+	CorePublic(CoreSharedState& ss, CoreZoneManager& zone_manager) :
+			ss_(ss), zone_manager_(zone_manager), pub_(ss_.nh.advertise<roah_rsbb::CoreToPublic>("/core/to_public", 1, true)), pub_timer_(
+					ss_.nh.createTimer(Duration(0.5), &CorePublic::transmit, this)), relevant_time_(TIME_MIN) {
+		transmit();
+	}
 };
 
 #endif

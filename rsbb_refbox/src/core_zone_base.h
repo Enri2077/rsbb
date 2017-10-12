@@ -207,8 +207,7 @@ class TimeControl {
 
 	Time start_time_;
 
-	Duration delay_acc_;
-	bool paused_;
+	Duration delay_acc_;bool paused_;
 	Time pause_start_;
 
 	Timer timeout_timer_;

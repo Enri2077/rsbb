@@ -29,29 +29,24 @@
 #include <roah_rsbb/CoreToGui.h>
 #include "topic_receiver.h"
 
+namespace rqt_roah_rsbb {
+class ActiveRobots: public rqt_gui_cpp::Plugin {
+Q_OBJECT
 
+public:
+	ActiveRobots();
+	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+	virtual void shutdownPlugin();
 
-namespace rqt_roah_rsbb
-{
-  class ActiveRobots
-    : public rqt_gui_cpp::Plugin
-  {
-      Q_OBJECT
+private:
+	Ui::ActiveRobots ui_;
+	QWidget* widget_;
+	QTimer update_timer_;
+	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
 
-    public:
-      ActiveRobots();
-      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
-      virtual void shutdownPlugin();
-
-    private:
-      Ui::ActiveRobots ui_;
-      QWidget* widget_;
-      QTimer update_timer_;
-      TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
-
-    private slots:
-      void update();
-  };
+private slots:
+	void update();
+};
 }
 
 #endif

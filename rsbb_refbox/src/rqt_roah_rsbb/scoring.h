@@ -33,35 +33,30 @@
 #include <roah_rsbb/ZoneScore.h>
 #include "topic_receiver.h"
 
+namespace rqt_roah_rsbb {
+class Scoring: public rqt_gui_cpp::Plugin {
+Q_OBJECT
 
+public:
+	Scoring();
+	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+	virtual void shutdownPlugin();
 
-namespace rqt_roah_rsbb
-{
-  class Scoring
-    : public rqt_gui_cpp::Plugin
-  {
-      Q_OBJECT
+private:
+	Ui::Scoring ui_;
+	QScrollArea* widget_;
+	QTimer update_timer_;
+	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
+	const ros::Duration CONTROL_DURATION;
+	ros::Time last_control_;
+	std::vector<roah_rsbb::ZoneScoreGroup> last_scoring_;
+	std::map<QObject*, roah_rsbb::ZoneScore> service_template_;
 
-    public:
-      Scoring();
-      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
-      virtual void shutdownPlugin();
-
-    private:
-      Ui::Scoring ui_;
-      QScrollArea* widget_;
-      QTimer update_timer_;
-      TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
-      const ros::Duration CONTROL_DURATION;
-      ros::Time last_control_;
-      std::vector<roah_rsbb::ZoneScoreGroup> last_scoring_;
-      std::map<QObject*, roah_rsbb::ZoneScore> service_template_;
-
-    private slots:
-      void update();
-      void check_cb (int value);
-      void spin_cb (int value);
-  };
+private slots:
+	void update();
+	void check_cb(int value);
+	void spin_cb(int value);
+};
 }
 
 #endif

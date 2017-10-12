@@ -31,39 +31,34 @@
 #include <roah_rsbb/CoreToGui.h>
 #include "topic_receiver.h"
 
+namespace rqt_roah_rsbb {
+class BenchmarkControl: public rqt_gui_cpp::Plugin {
+Q_OBJECT
 
+public:
+	BenchmarkControl();
+	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+	virtual void shutdownPlugin();
 
-namespace rqt_roah_rsbb
-{
-  class BenchmarkControl
-    : public rqt_gui_cpp::Plugin
-  {
-      Q_OBJECT
+private:
+	Ui::BenchmarkControl ui_;
+	QWidget* widget_;
+	QTimer update_timer_;
+	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
 
-    public:
-      BenchmarkControl();
-      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
-      virtual void shutdownPlugin();
+	std::set<std::string> known_zones_;
+	std::string current_zone_;
 
-    private:
-      Ui::BenchmarkControl ui_;
-      QWidget* widget_;
-      QTimer update_timer_;
-      TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
-
-      std::set<std::string> known_zones_;
-      std::string current_zone_;
-
-    private slots:
-      void update();
-      void zone (QString const& zone);
-      void connect_s();
-      void disconnect();
-      void start();
-      void stop();
-      void previous();
-      void next();
-  };
+private slots:
+	void update();
+	void zone(QString const& zone);
+	void connect_s();
+	void disconnect();
+	void start();
+	void stop();
+	void previous();
+	void next();
+};
 }
 
 #endif

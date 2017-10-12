@@ -26,88 +26,74 @@
 
 #include <std_srvs/Empty.h>
 
-
-
 using namespace std;
 using namespace ros;
 
-
-
-namespace rqt_roah_rsbb
-{
-  CoreStatus::CoreStatus()
-    : rqt_gui_cpp::Plugin()
-    , widget_ (0)
-  {
-    setObjectName ("CoreStatus");
-  }
-
-  void CoreStatus::initPlugin (qt_gui_cpp::PluginContext& context)
-  {
-    // access standalone command line arguments
-    QStringList argv = context.argv();
-    // create QWidget
-    widget_ = new QWidget();
-    // extend the widget with all attributes and children from UI file
-    ui_.setupUi (widget_);
-
-    connect (ui_.shutdown, SIGNAL (released()), this, SLOT (exit()));
-
-    // add widget to the user interface
-    context.addWidget (widget_);
-
-    core_rcv_.start ("/core/to_gui", getNodeHandle());
-
-    connect (&update_timer_, SIGNAL (timeout()), this, SLOT (update()));
-    update_timer_.start (200);
-  }
-
-  void CoreStatus::shutdownPlugin()
-  {
-    update_timer_.stop();
-    core_rcv_.stop();
-  }
-
-  void CoreStatus::update()
-  {
-    Time now = Time::now();
-
-    Time core_status_time;
-    auto core_status = core_rcv_.last (core_status_time);
-
-    if (! core_status) {
-      ui_.status->setText ("Waiting for core...");
-      return;
-    }
-
-    if ( (now - core_status_time) > Duration (1)) {
-      ui_.status->setText ("No communication!");
-      ui_.addr->setText ("--");
-      ui_.port->setText ("--");
-      ui_.robots->setText ("--");
-      return;
-    }
-
-    ui_.status->setText (QString::fromStdString (core_status->status));
-    ui_.addr->setText (QString::fromStdString (core_status->addr));
-    ui_.port->setText (QString::fromStdString (core_status->port));
-    ui_.robots->setText (QString::number (core_status->active_robots.size()));
-  }
-
-  void CoreStatus::exit()
-  {
-    if (service::waitForService ("roah_rsbb_shutdown", 500)) {
-      std_srvs::Empty s;
-      if (! service::call ("roah_rsbb_shutdown", s)) {
-        NODELET_ERROR ("Error calling roah_rsbb_shutdown service");
-      }
-    }
-    else {
-      NODELET_ERROR ("Could not find roah_rsbb_shutdown service");
-    }
-  }
+namespace rqt_roah_rsbb {
+CoreStatus::CoreStatus() :
+		rqt_gui_cpp::Plugin(), widget_(0) {
+	setObjectName("CoreStatus");
 }
 
+void CoreStatus::initPlugin(qt_gui_cpp::PluginContext& context) {
+	// access standalone command line arguments
+	QStringList argv = context.argv();
+	// create QWidget
+	widget_ = new QWidget();
+	// extend the widget with all attributes and children from UI file
+	ui_.setupUi(widget_);
 
+	connect(ui_.shutdown, SIGNAL(released()), this, SLOT(exit()));
 
-PLUGINLIB_DECLARE_CLASS (rqt_roah_rsbb, CoreStatus, rqt_roah_rsbb::CoreStatus, rqt_gui_cpp::Plugin)
+	// add widget to the user interface
+	context.addWidget(widget_);
+
+	core_rcv_.start("/core/to_gui", getNodeHandle());
+
+	connect(&update_timer_, SIGNAL(timeout()), this, SLOT(update()));
+	update_timer_.start(200);
+}
+
+void CoreStatus::shutdownPlugin() {
+	update_timer_.stop();
+	core_rcv_.stop();
+}
+
+void CoreStatus::update() {
+	Time now = Time::now();
+
+	Time core_status_time;
+	auto core_status = core_rcv_.last(core_status_time);
+
+	if (!core_status) {
+		ui_.status->setText("Waiting for core...");
+		return;
+	}
+
+	if ((now - core_status_time) > Duration(1)) {
+		ui_.status->setText("No communication!");
+		ui_.addr->setText("--");
+		ui_.port->setText("--");
+		ui_.robots->setText("--");
+		return;
+	}
+
+	ui_.status->setText(QString::fromStdString(core_status->status));
+	ui_.addr->setText(QString::fromStdString(core_status->addr));
+	ui_.port->setText(QString::fromStdString(core_status->port));
+	ui_.robots->setText(QString::number(core_status->active_robots.size()));
+}
+
+void CoreStatus::exit() {
+	if (service::waitForService("roah_rsbb_shutdown", 500)) {
+		std_srvs::Empty s;
+		if (!service::call("roah_rsbb_shutdown", s)) {
+			NODELET_ERROR("Error calling roah_rsbb_shutdown service");
+		}
+	} else {
+		NODELET_ERROR("Could not find roah_rsbb_shutdown service");
+	}
+}
+}
+
+PLUGINLIB_DECLARE_CLASS(rqt_roah_rsbb, CoreStatus, rqt_roah_rsbb::CoreStatus, rqt_gui_cpp::Plugin)

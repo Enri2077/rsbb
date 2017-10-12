@@ -25,50 +25,34 @@
 #include "core_gui.h"
 #include "core_public.h"
 
+namespace roah_rsbb {
+class Core {
+	CoreSharedState ss_;
+	CorePublicChannel public_channel_;
+	CoreZoneManager zone_manager_;
+	CoreGui gui_;
+	CorePublic public_;
 
+	Subscriber devices_sub_;
 
-namespace roah_rsbb
-{
-  class Core
-  {
-      CoreSharedState ss_;
-      CorePublicChannel public_channel_;
-      CoreZoneManager zone_manager_;
-      CoreGui gui_;
-      CorePublic public_;
+	void devices_callback(roah_devices::DevicesState::ConstPtr const& msg) {
+		ss_.last_devices_state = msg;
+	}
 
-      Subscriber devices_sub_;
-
-      void
-      devices_callback (roah_devices::DevicesState::ConstPtr const& msg)
-      {
-        ss_.last_devices_state = msg;
-      }
-
-    public:
-      Core ()
-        : ss_()
-        , public_channel_ (ss_)
-        , zone_manager_ (ss_)
-        , gui_ (ss_, public_channel_, zone_manager_)
-        , public_ (ss_, zone_manager_)
-        , devices_sub_ (ss_.nh.subscribe ("/devices/state", 1, &Core::devices_callback, this))
-      {
-      }
-  };
+public:
+	Core() :
+			ss_(), public_channel_(ss_), zone_manager_(ss_), gui_(ss_, public_channel_, zone_manager_), public_(ss_, zone_manager_), devices_sub_(
+					ss_.nh.subscribe("/devices/state", 1, &Core::devices_callback, this)) {
+	}
+};
 }
 
+int main(int argc, char* argv[]) {
+	init(argc, argv, "roah_rsbb_core");
 
+	roah_rsbb::Core node;
 
-int
-main (int argc,
-      char* argv[])
-{
-  init (argc, argv, "roah_rsbb_core");
+	spin();
 
-  roah_rsbb::Core node;
-
-  spin();
-
-  return 0;
+	return 0;
 }

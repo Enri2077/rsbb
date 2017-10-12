@@ -24,35 +24,24 @@
 
 #include <ros_roah_rsbb.h>
 
-
-
 using namespace std;
 using namespace ros;
 
-
-
-void bell (std_msgs::Empty::ConstPtr const& /*msg*/)
-{
-  system (param_direct<string> ("~bell_ring_command", "mplayer bell.mp3").c_str());
+void bell(std_msgs::Empty::ConstPtr const& /*msg*/) {
+	system(param_direct<string>("~bell_ring_command", "mplayer bell.mp3").c_str());
 }
 
-
-
-void timeout (std_msgs::Empty::ConstPtr const& /*msg*/)
-{
-  system (param_direct<string> ("~timeout_ring_command", "mplayer timeout.mp3").c_str());
+void timeout(std_msgs::Empty::ConstPtr const& /*msg*/) {
+	system(param_direct<string>("~timeout_ring_command", "mplayer timeout.mp3").c_str());
 }
 
+int main(int argc, char** argv) {
+	init(argc, argv, "roah_rsbb_sounds");
+	NodeHandle nh;
 
+	Subscriber bell_sub = nh.subscribe("/devices/bell", 1, bell);
+	Subscriber timeout_sub = nh.subscribe("/timeout", 1, timeout);
+	spin();
 
-int main (int argc, char** argv)
-{
-  init (argc, argv, "roah_rsbb_sounds");
-  NodeHandle nh;
-
-  Subscriber bell_sub = nh.subscribe ("/devices/bell", 1, bell);
-  Subscriber timeout_sub = nh.subscribe ("/timeout", 1, timeout);
-  spin();
-
-  return 0;
+	return 0;
 }
