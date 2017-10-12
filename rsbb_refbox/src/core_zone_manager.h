@@ -30,16 +30,16 @@ class Zone: boost::noncopyable {
 	CoreSharedState& ss_;
 
 	string name_;
-	multimap<Time, const Event> events_;
-	multimap<Time, const Event>::const_iterator current_event_;
+	multimap<Time, Event> events_;
+	multimap<Time, Event>::iterator current_event_;
 
 	unique_ptr<ExecutingBenchmark> executing_benchmark_;
 
 public:
 	typedef std::shared_ptr<Zone> Ptr;
 
-	Zone(CoreSharedState& ss, YAML::Node const& zone_node) :
-			ss_(ss) {
+	Zone(CoreSharedState& ss, YAML::Node const& zone_node) : ss_(ss) {
+
 		if (!zone_node["zone"]) {
 			ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry!");
 			abort_rsbb();
@@ -50,10 +50,12 @@ public:
 			ROS_FATAL_STREAM("Schedule file is missing a \"schedule\" entry!");
 			abort_rsbb();
 		}
+
 		if (!zone_node["schedule"].IsSequence()) {
 			ROS_FATAL_STREAM("Schedule in schedule file is not a sequence!");
 			abort_rsbb();
 		}
+
 		for (YAML::Node const& event_node : zone_node["schedule"]) {
 			Event e = Event(event_node);
 			e.benchmark = ss_.benchmarks.get(e.benchmark_code);
@@ -89,7 +91,7 @@ public:
 			abort_rsbb();
 		}
 
-		current_event_ = events_.cbegin();
+		current_event_ = events_.begin();
 	}
 
 	string name() const {
@@ -248,7 +250,7 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " PREVIOUS");
 
-		if (current_event_ != events_.cbegin()) {
+		if (current_event_ != events_.begin()) {
 			--current_event_;
 		}
 	}
@@ -261,9 +263,20 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " NEXT");
 
-		if (current_event_ != prev(events_.cend())) {
+		if (current_event_ != prev(events_.end())) {
 			++current_event_;
 		}
+	}
+
+	void set_run(int run) {
+		if (executing_benchmark_) {
+			ROS_WARN_STREAM("Zone: " << name() << " SET RUN (executing, ignored)");
+			return;
+		}
+
+		ROS_DEBUG_STREAM("Zone: " << name() << " SET RUN: " << run);
+
+		current_event_->second.run = run; // TODO
 	}
 
 	roah_rsbb::ZoneState msg(Time const& now) {
@@ -334,15 +347,15 @@ public:
 			}
 
 			zone.disconnect_enabled = false;
-			zone.prev_enabled = current_event_ != events_.cbegin();
-			zone.next_enabled = current_event_ != prev(events_.cend());
+			zone.prev_enabled = current_event_ != events_.begin();
+			zone.next_enabled = current_event_ != prev(events_.end());
 		}
 
 		return zone;
 	}
 
 	void msg(Time const& now, multimap<Time, roah_rsbb::ScheduleInfo>& map) {
-		for (multimap<Time, const Event>::const_iterator i = events_.cbegin(); i != events_.cend(); ++i) {
+		for (multimap<Time, Event>::iterator i = events_.begin(); i != events_.end(); ++i) {
 			roah_rsbb::ScheduleInfo msg;
 			msg.team = i->second.team;
 			msg.benchmark = i->second.benchmark.desc;

@@ -32,6 +32,7 @@
 #include <ros_roah_rsbb.h>
 
 #include <roah_rsbb/Zone.h>
+#include <roah_rsbb/ZoneUInt8.h>
 
 using namespace std;
 using namespace ros;
@@ -53,6 +54,7 @@ void BenchmarkControl::initPlugin(qt_gui_cpp::PluginContext& context) {
 	context.addWidget(widget_);
 
 	connect(ui_.zone, SIGNAL(currentIndexChanged (QString const&)), this, SLOT(zone (QString const&)));
+	connect(ui_.run_selector, SIGNAL(valueChanged (int const&)), this, SLOT(run (int const&)));
 	connect(ui_.connect, SIGNAL(clicked()), this, SLOT(connect_s()));
 	connect(ui_.disconnect, SIGNAL(clicked()), this, SLOT(disconnect()));
 	connect(ui_.start, SIGNAL(clicked()), this, SLOT(start()));
@@ -132,6 +134,7 @@ void BenchmarkControl::update() {
 		ui_.stop->setEnabled(current_zone->stop_enabled);
 		ui_.previous->setEnabled(current_zone->prev_enabled);
 		ui_.next->setEnabled(current_zone->next_enabled);
+
 	} else {
 		ui_.name->setText("--");
 		ui_.desc->setText("--");
@@ -157,6 +160,14 @@ void BenchmarkControl::update() {
 void BenchmarkControl::zone(QString const& zone) {
 	NODELET_DEBUG_STREAM("Setting zone to: " << zone.toStdString());
 	ros::param::set("current_zone", zone.toStdString());
+}
+
+void BenchmarkControl::run(int const& run) {
+	roah_rsbb::ZoneUInt8 z;
+	z.request.zone = current_zone_;
+	z.request.data = run;
+	NODELET_DEBUG_STREAM("Setting run to: " << run);
+	call_service("/core/run_select", z);
 }
 
 void BenchmarkControl::connect_s() {

@@ -52,6 +52,7 @@ private:
 private slots:
 	void update();
 	void zone(QString const& zone);
+	void run(int const& zone);
 	void connect_s();
 	void disconnect();
 	void start();
