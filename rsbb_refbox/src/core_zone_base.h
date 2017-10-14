@@ -39,7 +39,8 @@ struct Event {
 		benchmark_code = yamlschedget<string>(event_node, "benchmark");
 		team = yamlschedget<string>(event_node, "team");
 		round = yamlschedget<unsigned>(event_node, "round");
-		run = yamlschedget<unsigned>(event_node, "run");
+//		run = yamlschedget<unsigned>(event_node, "run");
+		run = 0;
 		scheduled_time = Time::fromBoost(boost::posix_time::time_from_string(yamlschedget<string>(event_node, "scheduled_time")));
 		// interval_time = Duration (yamlschedget<double> (event_node, "interval_time"));
 	}

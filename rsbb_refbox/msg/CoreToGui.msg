@@ -1,3 +1,8 @@
+uint8 RED = 0
+uint8 YELLOW = 1
+uint8 NEUTRAL = 2
+
+
 time clock
 
 string status
@@ -7,6 +12,11 @@ string port
 RobotInfo[] active_robots
 
 ZoneState[] zones
+
+string bm_server_status
+uint8 bm_server_status_color
+string record_server_status
+uint8 record_server_status_color
 
 time tablet_last_beacon
 bool tablet_display_map

@@ -86,6 +86,12 @@ void BenchmarkControl::update() {
 
 	param_direct("current_zone", string(), current_zone_);
 
+	bool zone_changed = false;
+	if (previous_zone_ != current_zone_){
+		zone_changed = true;
+		previous_zone_ = current_zone_;
+	}
+
 	roah_rsbb::ZoneState const* current_zone = nullptr;
 
 	set<string> new_zones;
@@ -107,8 +113,14 @@ void BenchmarkControl::update() {
 	if (current_zone) {
 		QString current_index_text = ui_.zone->itemText(ui_.zone->currentIndex());
 		QString new_zone = QString::fromStdString(current_zone_);
+
 		if (current_index_text != new_zone) {
 			ui_.zone->setCurrentIndex(ui_.zone->findText(new_zone)); // Guaranteed to exist by for loop above
+
+		}
+
+		if (zone_changed) {
+			ui_.run_selector->setValue((int) current_zone->run);
 		}
 
 		ui_.name->setText(QString::fromStdString(current_zone->name));
@@ -117,7 +129,8 @@ void BenchmarkControl::update() {
 		ui_.timeout->setText(to_qstring(current_zone->timeout));
 		ui_.team->setText(QString::fromStdString(current_zone->team));
 		ui_.round->setText(QString::number(current_zone->round));
-		ui_.run->setText(QString::number(current_zone->run));
+		ui_.run_selector->setEnabled(current_zone->run_selector_enabled);
+//		ui_.run->setText(QString::number(current_zone->run));
 		ui_.sched->setText(to_qstring(current_zone->schedule));
 
 		ui_.timer->setText(to_qstring(current_zone->timer));
@@ -142,7 +155,7 @@ void BenchmarkControl::update() {
 		ui_.timeout->setText("--");
 		ui_.team->setText("--");
 		ui_.round->setText("--");
-		ui_.run->setText("--");
+//		ui_.run->setText("--");
 		ui_.sched->setText("--");
 
 		ui_.timer->setText("00:00");

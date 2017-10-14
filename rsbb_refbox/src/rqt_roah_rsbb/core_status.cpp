@@ -82,6 +82,33 @@ void CoreStatus::update() {
 	ui_.addr->setText(QString::fromStdString(core_status->addr));
 	ui_.port->setText(QString::fromStdString(core_status->port));
 	ui_.robots->setText(QString::number(core_status->active_robots.size()));
+
+	ui_.bm_server_status->setText(QString::fromStdString(core_status->bm_server_status));
+
+	switch (core_status->bm_server_status_color) {
+	case roah_rsbb::CoreToGui::RED:
+		ui_.bm_server_status->setStyleSheet("background-color:red;");
+		break;
+	case roah_rsbb::CoreToGui::YELLOW:
+		ui_.bm_server_status->setStyleSheet("background-color:yellow;");
+		break;
+	case roah_rsbb::CoreToGui::NEUTRAL:
+		break;
+	}
+
+	ui_.record_server_status->setText(QString::fromStdString(core_status->record_server_status));
+
+	switch (core_status->record_server_status_color) {
+	case roah_rsbb::CoreToGui::RED:
+		ui_.record_server_status->setStyleSheet("background-color:red;");
+		break;
+	case roah_rsbb::CoreToGui::YELLOW:
+		ui_.record_server_status->setStyleSheet("background-color:yellow;");
+		break;
+	case roah_rsbb::CoreToGui::NEUTRAL:
+		break;
+	}
+
 }
 
 void CoreStatus::exit() {

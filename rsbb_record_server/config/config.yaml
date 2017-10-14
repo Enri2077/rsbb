@@ -1,5 +1,5 @@
-base_directory: "~/test_logs/"
-topic_list:
+base_record_directory: "~/refbox_output/"
+topics_list:
 - "topic1"
 - "topic2"
 - "/test1"

@@ -14,6 +14,7 @@ string state
 
 string manual_operation
 
+bool run_selector_enabled
 bool connect_enabled
 bool disconnect_enabled
 bool start_enabled

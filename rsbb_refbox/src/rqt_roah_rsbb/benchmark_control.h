@@ -47,7 +47,7 @@ private:
 	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
 
 	std::set<std::string> known_zones_;
-	std::string current_zone_;
+	std::string current_zone_, previous_zone_;
 
 private slots:
 	void update();

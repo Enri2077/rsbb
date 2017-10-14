@@ -68,7 +68,7 @@ string normalize(string path) {
 
 }
 
-bool valid_dir_path(fs::path p) {
+bool is_valid_dir_path(fs::path p) {
 	return fs::exists(p) && fs::is_directory(p);
 }
 
@@ -114,15 +114,7 @@ bool check_and_make_dir(fs::path p) {
 		}
 
 	}
-//
-//	// check path dir
-//	if (!(fs::exists(p) && fs::is_directory(p))) {
-//		if ()
-//			ROS_INFO_STREAM("Benchmark directory [" << p << "] does not exist. Creating directory.");
-//		if (!fs::create_directory(p)) {
-//			ROS_ERROR_STREAM("Benchmark directory [" << p << "] could not be created. Please, manually create the directory.");
-//		}
-//	}
+
 }
 
 void publish_system_status(string d = "") {
@@ -170,8 +162,8 @@ void timer_callback(const ros::TimerEvent&) {
 	}
 
 	// check, if recording, that the directory where the bags are saved exists
-	if (recording_ && !valid_dir_path(current_record_dir_path_)) {
-		ROS_ERROR_STREAM("DATA COULD BE LOST: current record directory not valid! current record directory [" << current_record_dir_path_ << "]");
+	if (recording_ && !is_valid_dir_path(current_record_dir_path_)) {
+		ROS_ERROR_STREAM("DATA LOST: current record directory not valid! current record directory [" << current_record_dir_path_ << "]");
 		current_system_status_.status = SystemStatus::ERROR;
 		restart_node();
 	}
@@ -252,7 +244,7 @@ int main(int argc, char** argv) {
 	ros::Timer timer = nh.createTimer(ros::Duration(0.1), timer_callback);
 	ros::Rate r(100); // 100 Hz
 	string base_path_str;
-	vector<string> topic_list;
+	vector<string> topics_list;
 
 	// publish current status
 	current_system_status_.status = SystemStatus::NORMAL;
@@ -262,25 +254,25 @@ int main(int argc, char** argv) {
 	current_record_request_.record = false;
 	current_record_request_.benchmark_code = "undefined";
 	current_record_request_.team = "undefined";
-	current_record_request_.robot = "undefined";
+	current_record_request_.robot = "";
 	current_record_request_.run = 0;
 
 	// get the parameters
-	if (!nh.getParam("topic_list", topic_list)) {
-		ROS_ERROR_STREAM("param topic_list not found or not a list of strings");
+	if (!nh.getParam("topics_list", topics_list)) {
+		ROS_ERROR_STREAM("param topics_list not found or not a list of strings");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
 	}
-	if (topic_list.empty()) {
-		ROS_ERROR_STREAM("param topic_list can not be empty");
+	if (topics_list.empty()) {
+		ROS_ERROR_STREAM("param topics_list can not be empty");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
 	}
 
-	if (!nh.getParam("base_directory", base_path_str)) {
-		ROS_ERROR_STREAM("param base_directory not found");
+	if (!nh.getParam("base_record_directory", base_path_str)) {
+		ROS_ERROR_STREAM("param base_record_directory not found");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
@@ -304,8 +296,21 @@ int main(int argc, char** argv) {
 	fs::path base_path(normalize(base_path_str));
 
 	// check base path
-	if (!valid_dir_path(base_path)) {
+	if (!is_valid_dir_path(base_path)) {
 		ROS_ERROR_STREAM("Base directory [" << base_path << "] does not exist. Please update the base_directory parameter with the directory where the bags should be saved");
+		current_system_status_.status = SystemStatus::ERROR;
+		publish_system_status("restarting");
+		restart_node();
+	}
+
+	// logs directory and path
+	//   note that this directory is necessary to ensure that the logs and the score files are saved in different directories,
+	//   avoiding the race condition on the check and creation of directories
+	fs::path logs_dir("rsbb_logs");
+	fs::path logs_path = base_path / logs_dir;
+
+	// check benchmark path
+	if (!check_and_make_dir(logs_path)) {
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
@@ -313,7 +318,7 @@ int main(int argc, char** argv) {
 
 	// benchmark directory and path
 	fs::path bm_dir(trim(current_record_request_.benchmark_code));
-	fs::path bm_path = base_path / bm_dir;
+	fs::path bm_path = logs_path / bm_dir;
 
 	// check benchmark path
 	if (!check_and_make_dir(bm_path)) {
@@ -321,12 +326,6 @@ int main(int argc, char** argv) {
 		publish_system_status("restarting");
 		restart_node();
 	}
-//	if (!valid_dir_path(bm_path)) {
-//		ROS_INFO_STREAM("Benchmark directory [" << bm_path << "] does not exist. Creating directory.");
-//		if (!fs::create_directory(bm_path)) {
-//			ROS_ERROR_STREAM("Benchmark directory [" << bm_path << "] could not be created. Please, manually create the directory.");
-//		}
-//	}
 
 	// team directory and path
 	fs::path team_dir(trim(current_record_request_.team));
@@ -338,12 +337,6 @@ int main(int argc, char** argv) {
 		publish_system_status("restarting");
 		restart_node();
 	}
-//	if (!valid_dir_path(team_path)) {
-//		ROS_INFO_STREAM("Team directory [" << team_path << "] does not exist. Creating directory.");
-//		if (!fs::create_directory(team_path)) {
-//			ROS_ERROR_STREAM("Team directory [" << team_path << "] could not be created. Please, manually create the directory.");
-//		}
-//	}
 
 	// bag (robot) directory and path
 	fs::path robot_dir(trim(current_record_request_.robot));
@@ -356,12 +349,6 @@ int main(int argc, char** argv) {
 		publish_system_status("restarting");
 		restart_node();
 	}
-//	if (!valid_dir_path(bag_path)) {
-//		ROS_INFO_STREAM("Robot directory [" << bag_path << "] does not exist. Creating directory.");
-//		if (!fs::create_directory(bag_path)) {
-//			ROS_ERROR_STREAM("Robot directory [" << bag_path << "] could not be created. Please, manually create the directory.");
-//		}
-//	}
 
 	// bag filename prefix and path with the bag's filename prefix
 	fs::path bag_filename_prefix(trim(string("run_") + to_string(current_record_request_.run)));
@@ -370,9 +357,10 @@ int main(int argc, char** argv) {
 	// set the options for the recorder
 	rosbag::RecorderOptions options;
 	options.prefix = bag_filename_prefixed_path.string();
-	options.topics = topic_list;
+	options.topics = topics_list;
 
 	ROS_INFO_STREAM("base_path:           " << base_path);
+	ROS_INFO_STREAM("logs_path:           " << logs_path);
 	ROS_INFO_STREAM("bm_path:             " << bm_path);
 	ROS_INFO_STREAM("team_path:           " << team_path);
 	ROS_INFO_STREAM("bag_path:            " << bag_path);

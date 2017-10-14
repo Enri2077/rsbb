@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from rockin_scoring.BmBox3 import BmBox
+#from rockin_scoring.BmBox3 import BmBox
 from rockin_scoring.BenchmarkObject import BaseBenchmarkObject
 
 import time
@@ -22,9 +22,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 		
 		BENCHMARK_RUNS = 2
 		
-		# Init benchmarking node
-#		self.benchmark = BmBox()
-		rospy.loginfo("simple_test_benchmark benchmarking node started")
+		rospy.loginfo("simple_test_benchmark started")
 		
 		# Variables to compute score
 		runs = 0
@@ -96,17 +94,20 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			# Evaluate final score
 			score = {
-				'score': "Some Score",
+				'score_1': "Some Score",
+				'score_2': "Some Score",
 				'execution_time': execution_time
 			}
+			
+			self.set_current_score(score)
 			
 			print "Score:", score
 			score_yaml = yaml.dump(score)
 			self.SendScore(score_yaml)
 		
+			# Benchmark concluded
+#			self.End()
+		
 		else:
 			print "Benchmark ended!!!!"
-		
-		# Benchmark concluded
-		self.End()
 

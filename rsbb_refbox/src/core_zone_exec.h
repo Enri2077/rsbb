@@ -836,9 +836,11 @@ public:
 	}
 
 	void publish_system_status(string d = ""){
+
 		current_system_status_.header.stamp = ros::Time::now();
 		current_system_status_.status_description = d;
 		system_status_publisher_.publish(current_system_status_);
+
 	}
 
 	void refbox_state_publish_timer_callback(const TimerEvent& = TimerEvent()) {
@@ -1023,6 +1025,8 @@ public:
 	bool end_benchmark_callback(EndBenchmark::Request& req, EndBenchmark::Response& res) {
 		printStates();
 
+		cout << endl << endl << "end_benchmark_callback" << endl << endl;
+
 		Time now = Time::now();
 		res.result.data = false;
 
@@ -1056,7 +1060,6 @@ public:
 	void bmbox_status_callback(SystemStatus::ConstPtr const& msg) {
 		printStates();
 
-//		if (msg->status == last_bmbox_status_.status && msg->status_description == last_bmbox_status_.status_description) return;
 		last_bmbox_status_ = *msg;
 
 		printStates();
@@ -1066,7 +1069,6 @@ public:
 	void record_server_status_callback(SystemStatus::ConstPtr const& msg) {
 		printStates();
 
-//		if (msg->status == last_record_server_status_.status && msg->status_description == last_record_server_status_.status_description) return;
 		last_record_server_status_ = *msg;
 
 		printStates();

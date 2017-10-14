@@ -296,6 +296,7 @@ public:
 		if (executing_benchmark_) {
 			executing_benchmark_->fill(now, zone);
 
+			zone.run_selector_enabled = false;
 			zone.connect_enabled = false;
 			zone.disconnect_enabled = true;
 			zone.prev_enabled = false;
@@ -346,6 +347,7 @@ public:
 				}
 			}
 
+			zone.run_selector_enabled = true;
 			zone.disconnect_enabled = false;
 			zone.prev_enabled = current_event_ != events_.begin();
 			zone.next_enabled = current_event_ != prev(events_.end());

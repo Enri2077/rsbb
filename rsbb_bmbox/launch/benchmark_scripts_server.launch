@@ -1,5 +1,6 @@
 <launch>
 
+		<rosparam file="$(find rsbb_bmbox)/config/config.yaml" command="load" />
 	
 		<node name="rsbb_bmbox"
 			pkg="rsbb_bmbox"
@@ -23,7 +24,6 @@
 			args="$(find rockin_mocap)/config/lisbon_home_testbed_map.yaml"
 		/>
 		
-		<rosparam file="$(find rockin_scoring)/config/all.yaml" command="load" />
 
 		<node name="mocap"
 			pkg="mocap_optitrack"

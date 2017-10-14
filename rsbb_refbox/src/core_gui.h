@@ -33,6 +33,7 @@ class CoreGui: boost::noncopyable {
 
 	Publisher pub_;
 	Timer pub_timer_;
+	Subscriber bmbox_status_subscriber_, record_server_status_subscriber_;
 
 	ServiceServer set_score_srv_;
 	ServiceServer manual_operation_complete_srv_;
@@ -47,6 +48,8 @@ class CoreGui: boost::noncopyable {
 	ServiceServer next_srv_;
 	ServiceServer run_select_srv_;
 
+	SystemStatus last_bmbox_status_, last_record_server_status_;
+
 	void transmit(const TimerEvent& = TimerEvent()) {
 		Time now = Time::now();
 
@@ -59,6 +62,50 @@ class CoreGui: boost::noncopyable {
 		msg->port = to_string(public_channel_.port());
 		ss_.active_robots.msg(msg->active_robots);
 		zone_manager_.msg(now, msg->zones);
+
+		if(now - last_bmbox_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )){
+			msg->bm_server_status = "timeout";
+			msg->bm_server_status_color = roah_rsbb::CoreToGui::YELLOW;
+		} else {
+			if(last_bmbox_status_.status_description.empty()){
+				msg->bm_server_status = "--";
+			}else{
+				msg->bm_server_status = last_bmbox_status_.status_description;
+			}
+			switch (last_bmbox_status_.status) {
+				case SystemStatus::ERROR:
+					msg->bm_server_status_color = roah_rsbb::CoreToGui::RED;
+					break;
+				case SystemStatus::NORMAL:
+					msg->bm_server_status_color = roah_rsbb::CoreToGui::NEUTRAL;
+					break;
+				case SystemStatus::UNKNOWN:
+					msg->bm_server_status_color = roah_rsbb::CoreToGui::YELLOW;
+					break;
+			}
+		}
+
+		if(now - last_record_server_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )){
+			msg->record_server_status = "timeout";
+			msg->record_server_status_color = roah_rsbb::CoreToGui::YELLOW;
+		} else {
+			if(last_record_server_status_.status_description.empty()){
+				msg->record_server_status = "--";
+			}else{
+				msg->record_server_status = last_record_server_status_.status_description;
+			}
+			switch (last_record_server_status_.status) {
+				case SystemStatus::ERROR:
+					msg->record_server_status_color = roah_rsbb::CoreToGui::RED;
+					break;
+				case SystemStatus::NORMAL:
+					msg->record_server_status_color = roah_rsbb::CoreToGui::NEUTRAL;
+					break;
+				case SystemStatus::UNKNOWN:
+					msg->record_server_status_color = roah_rsbb::CoreToGui::YELLOW;
+					break;
+			}
+		}
 
 		msg->tablet_last_beacon = ss_.last_tablet_time;
 		msg->tablet_display_map = ss_.tablet_display_map;
@@ -76,6 +123,16 @@ class CoreGui: boost::noncopyable {
 
 		pub_.publish(msg);
 	}
+
+
+	void bmbox_status_callback(SystemStatus::ConstPtr const& msg) {
+		last_bmbox_status_ = *msg;
+	}
+
+	void record_server_status_callback(SystemStatus::ConstPtr const& msg) {
+		last_record_server_status_ = *msg;
+	}
+
 
 	bool set_score_callback(roah_rsbb::ZoneScore::Request& req, roah_rsbb::ZoneScore::Response& res) {
 		Zone::Ptr zone = zone_manager_.get(req.zone);
@@ -199,20 +256,23 @@ class CoreGui: boost::noncopyable {
 
 public:
 	CoreGui(CoreSharedState& ss, CorePublicChannel& public_channel, CoreZoneManager& zone_manager) :
-			ss_(ss), public_channel_(public_channel), zone_manager_(zone_manager), pub_(ss_.nh.advertise<roah_rsbb::CoreToGui>("/core/to_gui", 1, true)),
-					pub_timer_(ss_.nh.createTimer(Duration(0.1), &CoreGui::transmit, this)),
-					set_score_srv_(ss_.nh.advertiseService("/core/set_score", &CoreGui::set_score_callback, this)),
-					manual_operation_complete_srv_(ss_.nh.advertiseService("/core/manual_operation_complete", &CoreGui::manual_operation_complete_callback, this)),
-					omf_complete_srv_(ss_.nh.advertiseService("/core/omf_switches/complete", &CoreGui::omf_complete_callback, this)),
-					omf_damaged_srv_(ss_.nh.advertiseService("/core/omf_switches/damaged", &CoreGui::omf_damaged_callback, this)),
-					omf_button_srv_(ss_.nh.advertiseService("/core/omf_switches/button", &CoreGui::omf_button_callback, this)),
-					connect_srv_(ss_.nh.advertiseService("/core/connect", &CoreGui::connect_callback, this)),
-					disconnect_srv_(ss_.nh.advertiseService("/core/disconnect", &CoreGui::disconnect_callback, this)),
-					start_srv_(ss_.nh.advertiseService("/core/start", &CoreGui::start_callback, this)),
-					stop_srv_(ss_.nh.advertiseService("/core/stop", &CoreGui::stop_callback, this)),
-					previous_srv_(ss_.nh.advertiseService("/core/previous", &CoreGui::previous_callback, this)),
-					next_srv_(ss_.nh.advertiseService("/core/next", &CoreGui::next_callback, this)),
-					run_select_srv_(ss_.nh.advertiseService("/core/run_select", &CoreGui::run_select_callback, this)) {
+			ss_(ss), public_channel_(public_channel), zone_manager_(zone_manager),
+			pub_(ss_.nh.advertise<roah_rsbb::CoreToGui>("/core/to_gui", 1, true)),
+			pub_timer_(ss_.nh.createTimer(Duration(0.1), &CoreGui::transmit, this)),
+			bmbox_status_subscriber_(ss_.nh.subscribe("/rsbb_system_status/bmbox", 1, &CoreGui::bmbox_status_callback, this)),
+			record_server_status_subscriber_(ss_.nh.subscribe("/rsbb_system_status/record_server", 1, &CoreGui::record_server_status_callback, this)),
+			set_score_srv_(ss_.nh.advertiseService("/core/set_score", &CoreGui::set_score_callback, this)),
+			manual_operation_complete_srv_(ss_.nh.advertiseService("/core/manual_operation_complete", &CoreGui::manual_operation_complete_callback, this)),
+			omf_complete_srv_(ss_.nh.advertiseService("/core/omf_switches/complete", &CoreGui::omf_complete_callback, this)),
+			omf_damaged_srv_(ss_.nh.advertiseService("/core/omf_switches/damaged", &CoreGui::omf_damaged_callback, this)),
+			omf_button_srv_(ss_.nh.advertiseService("/core/omf_switches/button", &CoreGui::omf_button_callback, this)),
+			connect_srv_(ss_.nh.advertiseService("/core/connect", &CoreGui::connect_callback, this)),
+			disconnect_srv_(ss_.nh.advertiseService("/core/disconnect", &CoreGui::disconnect_callback, this)),
+			start_srv_(ss_.nh.advertiseService("/core/start", &CoreGui::start_callback, this)),
+			stop_srv_(ss_.nh.advertiseService("/core/stop", &CoreGui::stop_callback, this)),
+			previous_srv_(ss_.nh.advertiseService("/core/previous", &CoreGui::previous_callback, this)),
+			next_srv_(ss_.nh.advertiseService("/core/next", &CoreGui::next_callback, this)),
+			run_select_srv_(ss_.nh.advertiseService("/core/run_select", &CoreGui::run_select_callback, this)) {
 		transmit();
 	}
 };

@@ -46,7 +46,7 @@ def import_benchmark_scripts():
 			if type(benchmark_code) != type(""):
 				print "type(benchmark_code) != type(\"\")"
 				raise BenchmarkCodeNotImplementedError("Method get_benchmark_code in BenchmarkObject should return a string")
-			
+						
 			scripts[benchmark_code] = benchmark_object
 			
 			print benchmark_code
@@ -76,7 +76,10 @@ class BenchmarkServer(object):
 		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t robot: %s\t run: %i' % (request.benchmark_code, request.team, request.robot, request.run))
 		
 		global execute_request
+		global execute_request_info
 		execute_request = request.benchmark_code
+		execute_request_info = request
+		
 		return BenchmarkRequestResponse(True)
 		#TODO return false if request.benchmark_code not in scripts
 	
@@ -121,6 +124,7 @@ def init_server():
 			try:
 				
 				print "start execute()"
+				scripts[execute_request].setup(execute_request_info.team, execute_request_info.run)
 				scripts[execute_request].execute()
 				
 			except ExecuteMethodNotImplementedError as e:
@@ -132,9 +136,10 @@ def init_server():
 				rospy.loginfo("Shutdown signal received")
 				rospy.loginfo(e)
 #				pass
-			
+				
 			except Exception as e:
 				rospy.logerr("Exception raised in benchmark script [%s]. Benchmark script terminated", execute_request)
+				rospy.signal_shutdown("Exception raised in benchmark script")
 				raise
 #				rospy.logerr(e)
 				#TODO publish benchmark_script_server SystemStatus.ERROR
