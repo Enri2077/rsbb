@@ -4,7 +4,7 @@ from exceptions import NotImplementedError
 import errno, yaml, platform
 
 import rospy
-from rockin_scoring.BmBox3 import BmBox
+from rockin_scoring.BmBox import BmBox
 
 class BenchmarkCodeNotImplementedError (NotImplementedError):
 	def __init__(self, value):
@@ -56,7 +56,7 @@ class BaseBenchmarkObject (BmBox):
 	
 	def __init__(self):
 		
-		BmBox.__init__(self)
+#		BmBox.__init__(self)
 		
 		self._score_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined"}, 'score': {}}
 		
@@ -141,6 +141,8 @@ class BaseBenchmarkObject (BmBox):
 	
 	def setup(self, team, run):
 		
+		BmBox.__init__(self)
+
 		### insert the benchmark informations in the yaml score object
 		self._score_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
 		self._score_object['benchmark_info']['team'] = team
@@ -150,6 +152,19 @@ class BaseBenchmarkObject (BmBox):
 		self.init_score_file()
 	
 	
+	def wrapped_execute(self):
+		print "wrapped_execute"
+		
+		# Wait for refbox
+		print "Waiting for RefBox"
+		self._wait_refbox_connection()
+		print "RefBox is ready"
+		
+		self.execute()
+		
+		self.end_benchmark()
+		
+	
 	def execute(self):
 		raise ExecuteMethodNotImplementedError("")
 		
@@ -157,3 +172,59 @@ class BaseBenchmarkObject (BmBox):
 #		print "Benchmark code was not defined in BenchmarkObject"
 #		raise BenchmarkCodeNotImplementedError("")
 
+
+class GoalObject:
+	def __init__(self, request = None, timeout = 0):
+		self._request = request
+		self._timeout = timeout
+		self._executed = False
+		self._result  = None
+		self._has_timed_out = None
+	
+	def get_request_string(self):
+		return yaml.dump(self._request)
+	
+	def get_timeout(self):
+		return self._timeout
+	
+	def has_been_executed(self):
+		return self._executed
+	
+	def has_timed_out(self):
+		return self._has_timed_out
+	
+	def set_has_timed_out(self, has_timed_out):
+		self._has_timed_out = has_timed_out
+	
+	def get_result(self):
+		if self._executed:
+			return self._result
+		else:
+			return None # TODO or raise Exception?
+	
+	def set_result_string(self, result_yaml_string):
+		self._result = yaml.load(result_yaml_string)
+		self._executed = True
+
+
+class ManualOperationObject:
+	def __init__(self, request):
+		self._request = request
+		self._executed = False
+		self._result  = None
+	
+	def get_request(self):
+		return self._request
+	
+	def has_been_executed(self):
+		return self._executed
+	
+	def get_result(self):
+		if self._executed:
+			return self._result
+		else:
+			return None # TODO or raise Exception?
+	
+	def set_result(self, result):
+		self._result = result
+		self._executed = True

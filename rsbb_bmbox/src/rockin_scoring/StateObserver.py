@@ -22,7 +22,7 @@ class StateObserver:
 			rospy.loginfo("StateObserver: refbox state has not been set yet")
 			self._condvar.wait()
 		
-		rospy.loginfo("StateObserver:          waiting for transition from benchmark state %s to benchmark states %s, except states %s", from_state, to_states, except_states)
+		rospy.loginfo("StateObserver:          waiting for transition from benchmark state %s to benchmark states %s, except states %s", self._refbox_state_to_str(from_state), self._refbox_states_to_str(to_states), self._refbox_states_to_str(except_states+self._except_states))
 		
 		# Go to sleep until the state is different from from_state
 		while not rospy.is_shutdown()\
@@ -54,7 +54,7 @@ class StateObserver:
 			rospy.loginfo("StateObserver: refbox state has not been set yet")
 			self._condvar.wait()
 		
-		rospy.loginfo("StateObserver:          waiting for transition from goal execution state %i to goal execution states %s, except states %s", from_state, to_states, except_states)
+		rospy.loginfo("StateObserver:          waiting for transition from goal execution state %s to goal execution states %s, except goal states %s and benchmark states %s", self._refbox_state_to_str(from_state), self._refbox_states_to_str(to_states), self._refbox_states_to_str(except_states), self._refbox_states_to_str(self._except_states) )
 		
 		# Go to sleep until the state is different from from_state
 		while not rospy.is_shutdown()\
@@ -85,7 +85,7 @@ class StateObserver:
 			rospy.loginfo("StateObserver: refbox state has not been set yet")
 			self._condvar.wait()
 		
-		rospy.loginfo("StateObserver:          waiting for transition from manual operation state %i to manual operation states %s, except states %s", from_state, to_states, except_states)
+		rospy.loginfo("StateObserver:          waiting for transition from manual operation state %s to manual operation states %s, except manual operation states %s and benchmark states %s", self._refbox_state_to_str(from_state), self._refbox_states_to_str(to_states), self._refbox_states_to_str(except_states), self._refbox_states_to_str(self._except_states))
 		
 		# Go to sleep until the state is different from from_state
 		while not rospy.is_shutdown()\
@@ -103,7 +103,7 @@ class StateObserver:
 		  and self._state.manual_operation_state not in except_states:
 			self._condvar.wait()
 		
-		rospy.logdebug("StateObserver: FINISHED waiting for transition from manual operation state", from_state, "to manual operation state", self._state.manual_operation_state)
+		rospy.logdebug("StateObserver: FINISHED waiting for transition from manual operation state", self._refbox_state_to_str(from_state), "to manual operation state", self._refbox_state_to_str(self._state.manual_operation_state))
 		
 		self._condvar.release()
 
@@ -126,10 +126,12 @@ class StateObserver:
 		self._condvar.release()
 	
 	
-	def __init__(self, except_states, initial_state):
+	def __init__(self, except_states, initial_state, refbox_state_to_str):
 		rospy.logdebug("StateObserver init")
 		self._state = initial_state
 		self._except_states = except_states
+		self._refbox_state_to_str = lambda state: refbox_state_to_str[state]
+		self._refbox_states_to_str = lambda list_of_states: map(self._refbox_state_to_str , list_of_states)
 		
 		self._condvar = Condition()
 		

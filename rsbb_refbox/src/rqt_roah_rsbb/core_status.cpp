@@ -93,6 +93,7 @@ void CoreStatus::update() {
 		ui_.bm_server_status->setStyleSheet("background-color:yellow;");
 		break;
 	case roah_rsbb::CoreToGui::NEUTRAL:
+		ui_.bm_server_status->setStyleSheet("");
 		break;
 	}
 
@@ -106,6 +107,7 @@ void CoreStatus::update() {
 		ui_.record_server_status->setStyleSheet("background-color:yellow;");
 		break;
 	case roah_rsbb::CoreToGui::NEUTRAL:
+		ui_.record_server_status->setStyleSheet("");
 		break;
 	}
 

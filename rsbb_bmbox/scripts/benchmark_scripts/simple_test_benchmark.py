@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rospy
-#from rockin_scoring.BmBox3 import BmBox
-from rockin_scoring.BenchmarkObject import BaseBenchmarkObject
+import rospy, yaml, time # TODO use rospy.time
 
-import time
-import yaml
+from rockin_scoring.BenchmarkObjects import BaseBenchmarkObject, GoalObject, ManualOperationObject
 
 
 class BenchmarkObject (BaseBenchmarkObject):
@@ -20,6 +17,8 @@ class BenchmarkObject (BaseBenchmarkObject):
 #	def execute(self, hello): ### test
 	def execute(self):
 		
+		print self._is_waiting_to_start()
+		
 		BENCHMARK_RUNS = 2
 		
 		rospy.loginfo("simple_test_benchmark started")
@@ -28,15 +27,8 @@ class BenchmarkObject (BaseBenchmarkObject):
 		runs = 0
 		execution_time = 0.0
 		
-		print "Waiting for Client"
-		
-		# Wait for client
-		self.WaitClient()
-		
-		print "Client connected"
-		
 		# Start the benchmark
-		while self.isBenchmarkRunning() and (runs < BENCHMARK_RUNS):
+		while self.is_benchmark_running() and (runs < BENCHMARK_RUNS):
 			runs = runs + 1
 			
 			now = rospy.Time.now()
@@ -45,52 +37,60 @@ class BenchmarkObject (BaseBenchmarkObject):
 			#            GOAL                        #
 			##########################################
 			
-			goal_object = {"goal": "GOAL %d"%runs, "details": 4}
-			goal_yaml_string = yaml.dump(goal_object)
+#			goal_object = 
+#			goal_yaml_string = yaml.dump(goal_object)
+#			print "yaml object from string", yaml.load(goal_yaml_string)["goal"]
 			
-			print "yaml object from string", yaml.load(goal_yaml_string)["goal"]
+			goal = GoalObject({"goal": "GOAL %d"%runs, "details": 4}, 15.0)
 			
 			# Send goal
-			print "Sending goal: %s" % goal_yaml_string
-			self.SendGoal(goal_yaml_string, 100)
-#			self.SendGoal() #TODO test this one
+			self.request_goal(goal)
+#			self.request_goal() #TODO test this one
 			start_time = time.time()
 			
 			# Wait for result from client
-			result_yaml = self.WaitResult()
+#			result_yaml = self.wait_goal_result()
+			self.wait_goal_result()
 			end_time = time.time()
 			
-			print "Received result_yaml:", result_yaml
+			print "Goal result received:", goal.get_result()
 			
+			execution_time = execution_time + (end_time - start_time)
 			
-			
-			########### TEST:
-#			x = 1/0
-			
-			
-			if self.isGoalTimedout():
+			if goal.has_timed_out():
 				print "GOAL TIMEOUT"
+				continue
+			else:
+				result = goal.get_result()
+			
+			if self.is_goal_timedout():
+				print "GOAL TIMEOUT"
+				rospy.logerr("TIMEOUT from state and not from GoalObject")
 				execution_time = execution_time + (end_time - start_time)
 				continue
 			
-			if self.isBenchmarkEnded():
+			if self.is_benchmark_ended():
 				print "BENCHMARK ENDED"
-				print self.getEndReason()
+				print self.get_end_reason()
 				break
 			
-			if result_yaml:
-				result = yaml.load(result_yaml)
 			
 			# Evaluate execution time
 			execution_time = execution_time + (end_time - start_time)
 			
 			rospy.loginfo("Execution time - %f" % execution_time)
+			
+#			self.end_benchmark()
 		
 		
-		if not self.isBenchmarkEnded():
+		if not self.is_benchmark_ended():
 			print "Starting final Manual Operation"
-			manual_operation_result = self.ManualOperation("Notes from the referee:")
-			print "Finished final Manual Operation: %s" % manual_operation_result
+			
+			manual_operation = ManualOperationObject("Notes from the referee:")
+			
+			self.manual_operation(manual_operation)
+			
+			print "Finished final Manual Operation: %s" % manual_operation.get_result()
 			
 			# Evaluate final score
 			score = {
@@ -101,12 +101,6 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			self.set_current_score(score)
 			
-			print "Score:", score
-			score_yaml = yaml.dump(score)
-			self.SendScore(score_yaml)
-		
-			# Benchmark concluded
-#			self.End()
 		
 		else:
 			print "Benchmark ended!!!!"
