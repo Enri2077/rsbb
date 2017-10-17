@@ -17,7 +17,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 #	def execute(self, hello): ### test
 	def execute(self):
 		
-		print self._is_waiting_to_start()
+#		print "\n\n\n\n\n\n\n", self.__current_goal, "\n\n\n\n\n\n\n"
 		
 		BENCHMARK_RUNS = 2
 		
@@ -63,7 +63,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 			else:
 				result = goal.get_result()
 			
-			if self.is_goal_timedout():
+			if self.is_goal_timed_out():
 				print "GOAL TIMEOUT"
 				rospy.logerr("TIMEOUT from state and not from GoalObject")
 				execution_time = execution_time + (end_time - start_time)

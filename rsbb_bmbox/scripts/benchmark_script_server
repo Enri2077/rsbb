@@ -180,7 +180,7 @@ class BenchmarkServer(object):
 
 if __name__ == '__main__':
 	try:
-		server = BenchmarkServer("init_benchmark", "terminate_benchmark_script")
+		server = BenchmarkServer("/bmbox/init_benchmark", "/bmbox/stop_benchmark")
 		server.run()
 	except rospy.ROSInterruptException:
 		pass

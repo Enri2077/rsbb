@@ -58,20 +58,21 @@ class BaseBenchmarkObject (BmBox):
 		
 #		BmBox.__init__(self)
 		
-		self._score_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined"}, 'score': {}}
+		self.__score_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined"}, 'score': {}}
 		
-		try: self._score_base_path = rospy.get_param("base_score_directory")
+		self.__score_filename_path = None
+		try: self.__score_base_path = rospy.get_param("base_score_directory")
 		except KeyError:
 			rospy.logerr("parameter base_score_directory not set in the configuration")
 			raise
 	
 	
-	def init_score_file(self):
+	def __init_score_file(self):
 				
 		### Create directories and initialise the score file with the benchmark info
 		
 		# base path
-		base_path = path.normpath(path.expanduser(self._score_base_path))
+		base_path = path.normpath(path.expanduser(self.__score_base_path))
 		print base_path
 		
 		# check base path
@@ -115,28 +116,29 @@ class BaseBenchmarkObject (BmBox):
 		
 		# score filename and path of the score file
 		score_filename = "score_run_%i_%s.yaml" % (self.get_benchmark_run(), datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
-		self._score_filename_path = path.join(team_path, score_filename)
-		print "score_filename_path:", self._score_filename_path
+		self.__score_filename_path = path.join(team_path, score_filename)
+		print "score_filename_path:", self.__score_filename_path
 		
-		with open(self._score_filename_path, 'w') as outfile:
-			yaml.dump(self._score_object, outfile, default_flow_style=False)
+		with open(self.__score_filename_path, 'w') as outfile:
+			yaml.dump(self.__score_object, outfile, default_flow_style=False)
 	
 	
 	def set_current_score(self, current_score):
-		self._score_object['score'] = current_score
+		self.__score_object['score'] = current_score
 		
 		#TODO overwrite file?
-		with open(self._score_filename_path, 'w') as outfile:
-			yaml.dump(self._score_object, outfile, default_flow_style=False)
+		with open(self.__score_filename_path, 'w') as outfile:
+			yaml.dump(self.__score_object, outfile, default_flow_style=False)
 	
 	def get_current_score(self):
-		return self._score_object['score']
+		return self.__score_object['score']
+	
 	
 	def get_benchmark_run(self):
-		return self._score_object['benchmark_info']['run']
+		return self.__score_object['benchmark_info']['run']
 	
 	def get_benchmark_team(self):
-		return self._score_object['benchmark_info']['team']
+		return self.__score_object['benchmark_info']['team']
 
 	
 	def setup(self, team, run):
@@ -144,12 +146,12 @@ class BaseBenchmarkObject (BmBox):
 		BmBox.__init__(self)
 
 		### insert the benchmark informations in the yaml score object
-		self._score_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
-		self._score_object['benchmark_info']['team'] = team
-		self._score_object['benchmark_info']['run'] = run
-		print "init self._score_object:", self._score_object
+		self.__score_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
+		self.__score_object['benchmark_info']['team'] = team
+		self.__score_object['benchmark_info']['run'] = run
+		print "init self.__score_object:", self.__score_object
 		
-		self.init_score_file()
+		self.__init_score_file()
 	
 	
 	def wrapped_execute(self):
@@ -228,3 +230,5 @@ class ManualOperationObject:
 	def set_result(self, result):
 		self._result = result
 		self._executed = True
+
+
