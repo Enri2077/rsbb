@@ -12,26 +12,25 @@ from rsbb_benchmarking_messages.msg import SystemStatus
 from rockin_scoring.BenchmarkObjects import *
 
 
-scripts = {}
-execute_request = None
-execute_request_info = None
 
 
 
 
 class BenchmarkServer(object):
 	
-	def __init__(self, init_benchmark_service_name, terminate_benchmark_service_name):
-		self._init_benchmark_service_name = init_benchmark_service_name
-		self._init_benchmark_request_service_server = rospy.Service(self._init_benchmark_service_name, BenchmarkRequest, self.execute_benchmark_callback)
+	def __init__(self):
 		
-		self._terminate_benchmark_service_name = terminate_benchmark_service_name
-		self._terminate_benchmark_request_service_server = rospy.Service(self._terminate_benchmark_service_name, TerminateBenchmarkScript, self.terminate_benchmark_callback)
+		self.scripts = {}
+		self.execute_request = None
+		self.execute_request_info = None
+		
+		self._init_benchmark_request_service_server = rospy.Service("bmbox/init_benchmark", InitBenchmark, self.execute_benchmark_callback)
+		self._terminate_benchmark_request_service_server = rospy.Service("bmbox/terminate_benchmark", TerminateBenchmark, self.terminate_benchmark_callback)
 		self._terminate_benchmark_request = False
 		
 		self._status = SystemStatus()
 		self._status.status = SystemStatus.NORMAL
-		self._status_pub = rospy.Publisher("/rsbb_system_status/bmbox", SystemStatus, queue_size=10)
+		self._status_pub = rospy.Publisher("rsbb_system_status/bmbox", SystemStatus, queue_size=10)
 		
 		rospy.init_node('rsbb_benchmark_server')
 		
@@ -40,38 +39,38 @@ class BenchmarkServer(object):
 	def execute_benchmark_callback(self, request):
 		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t robot: %s\t run: %i' % (request.benchmark_code, request.team, request.robot, request.run))
 		
-		global execute_request
-		global execute_request_info
-		execute_request = request.benchmark_code
-		execute_request_info = request
+#		global execute_request
+#		global execute_request_info
+		self.execute_request = request.benchmark_code
+		self.execute_request_info = request
 		
-		return BenchmarkRequestResponse(True)
+		return InitBenchmarkResponse(True)
 		#TODO return false if request.benchmark_code not in scripts
 	
 	
 	def terminate_benchmark_callback(self, request):
 		rospy.loginfo('terminate_benchmark_callback')
 		
-		global execute_request
+#		global execute_request
 		
-		if execute_request == None:
+		if self.execute_request == None:
 			self.publish_system_status("restarting")
 			self._terminate_benchmark_request = True
-			return TerminateBenchmarkScriptResponse(True)
+			return TerminateBenchmarkResponse(True)
 			
 		
-		if execute_request != None: print "can_terminate_benchmark: ", scripts[execute_request].can_terminate_benchmark()
+		if self.execute_request != None: print "can_terminate_benchmark: ", self.scripts[self.execute_request].can_terminate_benchmark()
 		
 		# TODO just restart the node if execute_request == None
 		
-		if execute_request == None or self._terminate_benchmark_request == True or not scripts[execute_request].can_terminate_benchmark():
-			return TerminateBenchmarkScriptResponse(False)
+		if self.execute_request == None or self._terminate_benchmark_request == True or not self.scripts[self.execute_request].can_terminate_benchmark():
+			return TerminateBenchmarkResponse(False)
 		
 		self._terminate_benchmark_request = True
 		
-		scripts[execute_request].terminate_benchmark()
+		self.scripts[self.execute_request].terminate_benchmark()
 		
-		return TerminateBenchmarkScriptResponse(True)
+		return TerminateBenchmarkResponse(True)
 		
 		#TODO return false if benchmark is not in state BmBoxState.END
 	
@@ -84,7 +83,7 @@ class BenchmarkServer(object):
 
 	def import_benchmark_scripts(self):
 	
-		global scripts
+#		global scripts
 	
 		print "imported scripts:"
 	
@@ -111,7 +110,7 @@ class BenchmarkServer(object):
 					print "type(benchmark_code) != type(\"\")"
 					raise BenchmarkCodeNotImplementedError("Method get_benchmark_code in BenchmarkObject should return a string")
 						
-				scripts[benchmark_code] = benchmark_object
+				self.scripts[benchmark_code] = benchmark_object
 			
 				print benchmark_code
 			
@@ -127,7 +126,7 @@ class BenchmarkServer(object):
 
 
 	def run(self):
-		global execute_request
+#		global execute_request
 		
 		rate = rospy.Rate(10) # 10hz
 		
@@ -135,15 +134,15 @@ class BenchmarkServer(object):
 		
 		while not rospy.is_shutdown():
 			
-			if execute_request:
+			if self.execute_request:
 			
 				try:
 					print "start execute()"
-					scripts[execute_request].setup(execute_request_info.team, execute_request_info.run)
-					scripts[execute_request].wrapped_execute()
+					self.scripts[self.execute_request].setup(self.execute_request_info.team, self.execute_request_info.run)
+					self.scripts[self.execute_request].wrapped_execute()
 				
 				except ExecuteMethodNotImplementedError as e:
-					rospy.logerr("Error for execute request [%s]: method execute(self) not implemented in BenchmarkObject", execute_request)
+					rospy.logerr("Error for execute request [%s]: method execute(self) not implemented in BenchmarkObject", self.execute_request)
 					rospy.logerr(e)
 					self._status.status = SystemStatus.ERROR
 					self.publish_system_status("error")
@@ -154,13 +153,13 @@ class BenchmarkServer(object):
 					self.publish_system_status("restarting")
 				
 				except Exception as e:
-					rospy.logerr("Exception raised in benchmark script [%s]. Benchmark script terminated", execute_request)
+					rospy.logerr("Exception raised in benchmark script [%s]. Benchmark script terminated", self.execute_request)
 					self._status.status = SystemStatus.ERROR
 					self.publish_system_status("error")
 					rospy.signal_shutdown("Exception raised in benchmark script")
 					raise
 				
-				execute_request = None
+				self.execute_request = None
 				print "finished execute()"
 				
 #				rospy.spin() #TODO shutdown
@@ -180,7 +179,7 @@ class BenchmarkServer(object):
 
 if __name__ == '__main__':
 	try:
-		server = BenchmarkServer("/bmbox/init_benchmark", "/bmbox/stop_benchmark")
+		server = BenchmarkServer()
 		server.run()
 	except rospy.ROSInterruptException:
 		pass

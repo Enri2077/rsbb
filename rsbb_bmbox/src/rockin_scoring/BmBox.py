@@ -2,7 +2,7 @@ from threading import Condition, Lock, Thread
 
 import rospy, yaml
 from rsbb_benchmarking_messages.msg import BmBoxState, RefBoxState, SystemStatus
-from rsbb_benchmarking_messages.srv import ExecuteManualOperation, ExecuteGoal, EndBenchmark
+from rsbb_benchmarking_messages.srv import *
 from std_msgs.msg import String, Float32
 from FSM import FSM
 from StateObserver import StateObserver
@@ -43,7 +43,7 @@ class BmBox:
 	
 	def __init__(self):
 		
-		print "BmBox.__init__(self)"
+#		print "BmBox.__init__(self)"
 		
 		self.__current_goal = None
 		self.__current_manual_operation = None
@@ -71,17 +71,21 @@ class BmBox:
 		self.__status = SystemStatus()
 		self.__status.status = SystemStatus.NORMAL
 		
-		self.__refbox_state_sub = rospy.Subscriber("/bmbox/refbox_state", RefBoxState, self.__refbox_state_cb)
+#		self.__refbox_state_sub = rospy.Subscriber("bmbox/refbox_state", RefBoxState, self.__refbox_state_cb)
 
-		self.__state_pub = rospy.Publisher("/bmbox/bmbox_state", BmBoxState, queue_size=10)
-		self.__status_pub = rospy.Publisher("/rsbb_system_status/bmbox", SystemStatus, queue_size=10)
+		self.__state_pub = rospy.Publisher("bmbox/bmbox_state", BmBoxState, queue_size=10)
+		self.__status_pub = rospy.Publisher("rsbb_system_status/bmbox", SystemStatus, queue_size=10)
 		
 		self.__refbox_state_observer = StateObserver(self.__exception_states, self.__refbox_state, refbox_state_to_str)
 
 		self.__pub_thread = Thread(name="pub_thread", target=self.__pub_thread)
 		self.__pub_thread.start()
-	
-	
+		
+		self._start_benchmark_server = rospy.Service("bmbox/start_benchmark", StartBenchmark, self.__start_benchmark_callback)
+		self._manual_operation_complete_server = rospy.Service("bmbox/manual_operation_complete", ManualOperationComplete, self.__manual_operation_complete_callback)
+		self._goal_started_server = rospy.Service("bmbox/goal_execution_started", GoalStarted, self.__goal_started_callback)
+		self._goal_complete_server = rospy.Service("bmbox/goal_complete", GoalComplete, self.__goal_complete_callback)
+		self._stop_benchmark_server = rospy.Service("bmbox/stop_benchmark", GoalStarted, self.__stop_benchmark_callback)
 	
 	
 	def __pub_thread(self):
@@ -96,12 +100,93 @@ class BmBox:
 			r.sleep()
 		
 		self.__state_pub.unregister()
-		print "__pub_thread(self) return"
+#		print "__pub_thread(self) return"
 	
+	
+	def __start_benchmark_callback(self, request):
+		
+		self.__refbox_state = request.refbox_state
+#		print "###############################   start_benchmark_callback __refbox_state_observer.update   BEGIN"
+		self.__refbox_state_observer.update(request.refbox_state)
+#		print "###############################   start_benchmark_callback __refbox_state_observer.update   END"
+		
+		return StartBenchmarkResponse(True)
+	
+	
+	def __goal_started_callback(self, request):
+		
+		if self.__current_goal == None:
+#			print "###############################   goal_started_callback   return    (self.__current_goal == None)"
+			return GoalStartedResponse(False)
+		
+		self.__refbox_state = request.refbox_state
+#		print "###############################   goal_started_callback __refbox_state_observer.update   BEGIN"
+		self.__refbox_state_observer.update(request.refbox_state)
+#		print "###############################   goal_started_callback __refbox_state_observer.update   END"
+		
+		return GoalStartedResponse(True)
+	
+	
+	def __goal_complete_callback(self, request):
+		
+		if self.__current_goal == None:
+#			print "###############################   goal_complete_callback   return    (self.__current_goal == None)"
+			return GoalCompleteResponse(False)
+		else:
+			if request.goal_timeout:
+				self.__current_goal.set_has_timed_out()
+			else:
+				self.__current_goal.set_result_string(request.goal_result)
+			## TODO better done in the appropriate function ? how to store goal result or timeout otherwise?
+		
+		self.__refbox_state = request.refbox_state
+#		print "###############################   goal_complete_callback __refbox_state_observer.update   BEGIN"
+		self.__refbox_state_observer.update(request.refbox_state)
+#		print "###############################   goal_complete_callback __refbox_state_observer.update   END"
+		
+		return GoalCompleteResponse(True)
+	
+	
+	def __manual_operation_complete_callback(self, request):
+		
+		# TODO check BmBox state is consistent
+		
+		if self.__current_manual_operation == None:
+#			print "###############################   manual_operation_complete_callback   return    (self.__current_manual_operation == None)"
+			return ManualOperationCompleteResponse(False)
+		else:
+			self.__current_manual_operation.set_result(request.manual_operation_result)
+			## TODO better done in the appropriate function ? how to store result otherwise?
+		
+		self.__refbox_state = request.refbox_state
+#		print "###############################   manual_operation_complete_callback __refbox_state_observer.update   BEGIN"
+		self.__refbox_state_observer.update(request.refbox_state)
+#		print "###############################   manual_operation_complete_callback __refbox_state_observer.update   END"
+		
+		return ManualOperationCompleteResponse(True)
+	
+	def __stop_benchmark_callback(self, request):
+		
+		print type(request)
+		
+		# TODO check BmBox state is consistent
+	
+		self.__refbox_state = request.refbox_state
+		print "###############################   stop_benchmark __refbox_state_observer.update   BEGIN"
+		self.__refbox_state_observer.update(request.refbox_state)
+		print "###############################   stop_benchmark __refbox_state_observer.update   END"
+		
+		# TODO call end_benchmark or fsm.state = BmBoxState.END or do nothing?
+		
+		return True
+		
+		
 	def __refbox_state_cb(self, msg):
 		
 		self.__refbox_state = msg
-		self.__refbox_state_observer.update(msg)
+#		print "###############################   __refbox_state_cb   begin"
+#		self.__refbox_state_observer.update(msg)
+#		print "###############################   __refbox_state_cb   end"
 		
 		if self.__refbox_state.benchmark_state in self.__exception_states \
 		or self.__refbox_state.goal_execution_state in self.__exception_states \
@@ -128,6 +213,8 @@ class BmBox:
 		self.__fsm.update(BmBoxState.WAITING_CLIENT)
 		self.__refbox_state_observer.wait_benchmark_state_transition(from_state = RefBoxState.START, to_states = [RefBoxState.EXECUTING_BENCHMARK])
 		self.__fsm.update(BmBoxState.READY)
+		
+		# TODO manage exception (stop, global timeout, error)
 		
 	def manual_operation(self, manual_operation_object=None):
 		rospy.logdebug("BmBox.ManualOperation()")
@@ -158,17 +245,24 @@ class BmBox:
 		
 		try:
 			print "calling execute_manual_operation service: ", self.__current_manual_operation.get_request()
-			execute_manual_operation = rospy.ServiceProxy('/bmbox/execute_manual_operation', ExecuteManualOperation)
+			execute_manual_operation = rospy.ServiceProxy("bmbox/execute_manual_operation", ExecuteManualOperation)
 			manual_operation_payload = String()
 			manual_operation_payload.data = self.__current_manual_operation.get_request()
 			response = execute_manual_operation(manual_operation_payload)
 			
 			if response.result.data:
+				
+				self.__refbox_state = response.refbox_state
+				self.__refbox_state_observer.update(response.refbox_state)
+				
 				self.__refbox_state_observer.wait_manual_operation_state_transition(from_state = RefBoxState.READY, to_states = [RefBoxState.EXECUTING_MANUAL_OPERATION])
 				self.__refbox_state_observer.wait_manual_operation_state_transition(from_state = RefBoxState.EXECUTING_MANUAL_OPERATION, to_states = [RefBoxState.READY])
+#				print "###############################   wait_manual_operation_state_transition   return"
 				self.__fsm.update(BmBoxState.READY, None)
 				
-				self.__current_manual_operation.set_result(self.__refbox_state.manual_operation_payload)
+				# TODO manage exception (stop, global timeout, error)
+				
+#				self.__current_manual_operation.set_result(self.__refbox_state.manual_operation_payload)
 			
 			else:
 				rospy.logerr("manual_operation: Manual operation FAILED (refbox refused to execute the manual operation)")
@@ -177,6 +271,9 @@ class BmBox:
 		
 		except rospy.ServiceException, e:
 			rospy.logerr("Service call failed: %s"%e)
+		
+		
+#		print "###############################   manual_operation   return"
 		
 		self.__current_manual_operation = None
 		return
@@ -209,7 +306,7 @@ class BmBox:
 		
 		try:
 			print "calling execute_goal service: request:", self.__current_goal.get_request_string(), "timeout:", self.__current_goal.get_timeout()
-			execute_goal = rospy.ServiceProxy('/bmbox/execute_goal', ExecuteGoal)
+			execute_goal = rospy.ServiceProxy("bmbox/execute_goal", ExecuteGoal)
 			goal_payload = String()
 			goal_payload.data = self.__current_goal.get_request_string()
 			timeout_payload = Float32()
@@ -217,13 +314,18 @@ class BmBox:
 			response = execute_goal(goal_payload, timeout_payload)
 			
 			if response.result.data:
+				
+				self.__refbox_state = response.refbox_state
+				self.__refbox_state_observer.update(response.refbox_state)
+				
 				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.READY, to_states = [RefBoxState.TRANSMITTING_GOAL, RefBoxState.GOAL_TIMEOUT])
 				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.TRANSMITTING_GOAL, to_states = [RefBoxState.EXECUTING_GOAL, RefBoxState.GOAL_TIMEOUT])
 				self.__fsm.update(BmBoxState.EXECUTING_GOAL, self.__current_goal.get_request_string())
 				
-				if self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT:
-					self.__current_goal.set_has_timed_out(True)
-					# TODO call timeout_ack service
+				# TODO manage exception (stop, global timeout, error)
+		
+#				if self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT:
+#					self.__current_goal.set_has_timed_out(True)
 				
 			else:
 				rospy.logerr("SendGoal: Goal request FAILED (refbox refused to execute the goal)")
@@ -257,14 +359,15 @@ class BmBox:
 		self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.EXECUTING_GOAL, to_states = [RefBoxState.READY, RefBoxState.GOAL_TIMEOUT])
 		self.__fsm.update(BmBoxState.READY, None)
 		
-		if self.__refbox_state.goal_execution_state == RefBoxState.READY:
-			self.__current_goal.set_result_string(self.__refbox_state.goal_execution_payload)
+		# TODO manage exception (stop, global timeout, error)
 		
-		elif self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT:
-			self.__current_goal.set_has_timed_out(True)
-			# TODO call timeout_ack service
-		
-		print "wait_goal_result: result:", self.__refbox_state.goal_execution_payload
+#		if self.__refbox_state.goal_execution_state == RefBoxState.READY:
+#			self.__current_goal.set_result_string(self.__refbox_state.goal_execution_payload)
+#		
+#		elif self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT:
+#			self.__current_goal.set_has_timed_out(True)
+#		
+#		print "wait_goal_result: result:", self.__refbox_state.goal_execution_payload
 		self.__current_goal = None
 		return
 	
@@ -295,12 +398,16 @@ class BmBox:
 		
 		try:
 			print "calling end_benchmark service: ", score_yaml_string
-			end_benchmark = rospy.ServiceProxy('/bmbox/end_benchmark', EndBenchmark)
+			end_benchmark = rospy.ServiceProxy("bmbox/end_benchmark", EndBenchmark)
 			end_benchmark_payload = String()
 			end_benchmark_payload.data = score_yaml_string
 			response = end_benchmark(end_benchmark_payload)
 			
 			if response.result.data:
+				
+				self.__refbox_state = response.refbox_state
+				self.__refbox_state_observer.update(response.refbox_state)
+				
 				self.__refbox_state_observer.wait_benchmark_state_transition(from_state = RefBoxState.EXECUTING_BENCHMARK, to_states = [RefBoxState.END])
 				self.__fsm.update(BmBoxState.END, None)
 				
@@ -336,7 +443,7 @@ class BmBox:
 		
 		self.__send_score()
 		
-		self.__refbox_state_sub.unregister()
+#		self.__refbox_state_sub.unregister() TODO still usefull
 	
 	
 	
@@ -364,7 +471,7 @@ class BmBox:
 		elif self.__refbox_state.benchmark_state == RefBoxState.EMERGENCY_STOP: return 'EMERGENCY_STOP: benchmark stopped due to emergency'
 		elif self.__refbox_state.benchmark_state == RefBoxState.ERROR:          return 'ERROR: benchmark terminated due to RefBox error'
 		elif self.__refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT: return 'GLOBAL_TIMEOUT: benchmark ended due to global timeout'
-		else:                                                                  return 'not ended or unnown reason'
+		else:                                                                   return 'not ended or unnown reason'
 	
 	def can_terminate_benchmark(self):
 		return self.is_benchmark_ended() or self.__is_waiting_to_start()

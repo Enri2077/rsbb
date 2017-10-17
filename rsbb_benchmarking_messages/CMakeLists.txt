@@ -21,12 +21,17 @@ add_message_files(
 
 add_service_files(
   FILES
+  InitBenchmark.srv
+  TerminateBenchmark.srv
+  StartBenchmark.srv
   ExecuteManualOperation.srv
+  ManualOperationComplete.srv
   ExecuteGoal.srv
+  GoalStarted.srv
+  GoalComplete.srv
   EndBenchmark.srv
-  BenchmarkRequest.srv
+  StopBenchmark.srv
   StopRecordRequest.srv
-  TerminateBenchmarkScript.srv
 )
 
 generate_messages(

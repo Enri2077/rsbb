@@ -73,7 +73,7 @@ class BaseBenchmarkObject (BmBox):
 		
 		# base path
 		base_path = path.normpath(path.expanduser(self.__score_base_path))
-		print base_path
+#		print base_path
 		
 		# check base path
 		if not is_valid_dir_path(base_path):
@@ -88,12 +88,12 @@ class BaseBenchmarkObject (BmBox):
 		#   avoiding the race condition on the check and creation of directories
 		score_base_dir = "score"
 		score_base_path = path.join(base_path, score_base_dir)
-		print score_base_path
+#		print score_base_path
 		
 		# benchmark directory and path
 		bm_dir = trim(self.get_benchmark_code())
 		bm_path = path.join(score_base_path, bm_dir)
-		print bm_path
+#		print bm_path
 	
 		# check benchmark path
 		if not check_and_make_dir(bm_path):
@@ -105,7 +105,7 @@ class BaseBenchmarkObject (BmBox):
 		# team directory and path
 		team_dir = trim(self.get_benchmark_team())
 		team_path = path.join(bm_path, team_dir)
-		print team_path
+#		print team_path
 	
 		# check team path
 		if not check_and_make_dir(team_path):
@@ -117,7 +117,7 @@ class BaseBenchmarkObject (BmBox):
 		# score filename and path of the score file
 		score_filename = "score_run_%i_%s.yaml" % (self.get_benchmark_run(), datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
 		self.__score_filename_path = path.join(team_path, score_filename)
-		print "score_filename_path:", self.__score_filename_path
+#		print "score_filename_path:", self.__score_filename_path
 		
 		with open(self.__score_filename_path, 'w') as outfile:
 			yaml.dump(self.__score_object, outfile, default_flow_style=False)
@@ -149,13 +149,13 @@ class BaseBenchmarkObject (BmBox):
 		self.__score_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
 		self.__score_object['benchmark_info']['team'] = team
 		self.__score_object['benchmark_info']['run'] = run
-		print "init self.__score_object:", self.__score_object
+#		print "init self.__score_object:", self.__score_object
 		
 		self.__init_score_file()
 	
 	
 	def wrapped_execute(self):
-		print "wrapped_execute"
+#		print "wrapped_execute"
 		
 		# Wait for refbox
 		print "Waiting for RefBox"
@@ -195,8 +195,9 @@ class GoalObject:
 	def has_timed_out(self):
 		return self._has_timed_out
 	
-	def set_has_timed_out(self, has_timed_out):
-		self._has_timed_out = has_timed_out
+	def set_has_timed_out(self):
+		self._has_timed_out = True
+		self._executed = True
 	
 	def get_result(self):
 		if self._executed:

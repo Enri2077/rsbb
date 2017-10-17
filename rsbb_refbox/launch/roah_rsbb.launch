@@ -1,4 +1,7 @@
 <launch>
+
+<group ns="rsbb">
+
   <arg name="rsbb_host" default="10.0.0.255"/>
   <arg name="rsbb_port" default="6666"/>
   <arg name="smartif_host" default="192.168.1.56"/>
@@ -37,5 +40,7 @@
     <param name="bell_ring_command" type="string" value="$(arg bell_ring_command)"/>
     <param name="timeout_ring_command" type="string" value="$(arg timeout_ring_command)"/>
   </node>
+
+</group>
 
 </launch>

@@ -17,15 +17,19 @@ class BenchmarkObject (BaseBenchmarkObject):
 #	def execute(self, hello): ### test
 	def execute(self):
 		
+		rospy.loginfo("simple_test_benchmark started")
 #		print "\n\n\n\n\n\n\n", self.__current_goal, "\n\n\n\n\n\n\n"
 		
 		BENCHMARK_RUNS = 2
-		
-		rospy.loginfo("simple_test_benchmark started")
-		
-		# Variables to compute score
 		runs = 0
 		execution_time = 0.0
+		
+		
+		manual_operation_1 = ManualOperationObject("First Manual Operation")
+		
+		self.manual_operation(manual_operation_1)
+		
+		print "First Manual Operation result: %s" % manual_operation_1.get_result()
 		
 		# Start the benchmark
 		while self.is_benchmark_running() and (runs < BENCHMARK_RUNS):
@@ -90,7 +94,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			self.manual_operation(manual_operation)
 			
-			print "Finished final Manual Operation: %s" % manual_operation.get_result()
+			print "Final Manual Operation result: %s" % manual_operation.get_result()
 			
 			# Evaluate final score
 			score = {

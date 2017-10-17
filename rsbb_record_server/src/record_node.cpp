@@ -26,9 +26,9 @@ namespace fs = boost::filesystem;
 using namespace std;
 using namespace rsbb_benchmarking_messages;
 
-#define RSBB_SYSTEM_STATUS_MESSAGES_TOPIC_NAME "/rsbb_system_status/record_server"
-#define RECORD_REQUEST_TOPIC_NAME "/record_server/record_request"
-#define STOP_RECORD_REQUEST_SERVICE_NAME "/record_server/stop_record_request"
+#define RSBB_SYSTEM_STATUS_MESSAGES_TOPIC_NAME "rsbb_system_status/record_server"
+#define RECORD_REQUEST_TOPIC_NAME "record_server/record_request"
+#define STOP_RECORD_REQUEST_SERVICE_NAME "record_server/stop_record_request"
 #define MESSAGE_TIMEOUT_SECONDS 1.0
 
 Record* recorder_ = NULL;

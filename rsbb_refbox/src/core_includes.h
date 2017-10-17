@@ -45,14 +45,20 @@
 
 #include <rsbb_benchmarking_messages/BmBoxState.h>
 #include <rsbb_benchmarking_messages/RefBoxState.h>
+#include <rsbb_benchmarking_messages/SystemStatus.h>
+
+#include <rsbb_benchmarking_messages/InitBenchmark.h>
+#include <rsbb_benchmarking_messages/TerminateBenchmark.h>
+#include <rsbb_benchmarking_messages/StartBenchmark.h>
 #include <rsbb_benchmarking_messages/ExecuteManualOperation.h>
+#include <rsbb_benchmarking_messages/ManualOperationComplete.h>
 #include <rsbb_benchmarking_messages/ExecuteGoal.h>
+#include <rsbb_benchmarking_messages/GoalStarted.h>
+#include <rsbb_benchmarking_messages/GoalComplete.h>
 #include <rsbb_benchmarking_messages/EndBenchmark.h>
-#include <rsbb_benchmarking_messages/BenchmarkRequest.h>
+#include <rsbb_benchmarking_messages/StopBenchmark.h>
 #include <rsbb_benchmarking_messages/RecordRequest.h>
 #include <rsbb_benchmarking_messages/StopRecordRequest.h>
-#include <rsbb_benchmarking_messages/TerminateBenchmarkScript.h>
-#include <rsbb_benchmarking_messages/SystemStatus.h>
 #include <roah_devices/Bool.h>
 #include <roah_devices/DevicesState.h>
 #include <roah_devices/Percentage.h>
