@@ -170,7 +170,7 @@ void timer_callback(const ros::TimerEvent&) {
 
 	//TODO: check bag status and warn if bag not growing normally
 
-	publish_system_status(recording_ ? "recording" : "not recording");
+	publish_system_status(recording_ ? "recording" : "waiting");
 }
 
 void record_request_callback(RecordRequest::ConstPtr record_request_message) {

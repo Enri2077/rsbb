@@ -1,5 +1,7 @@
 <launch>
 
+<group ns="rsbb">
+
 		<rosparam file="$(find rsbb_bmbox)/config/config.yaml" command="load" />
 	
 		<node name="rsbb_bmbox"
@@ -66,5 +68,6 @@
 	</group>
 		-->
 		
+</group>
 	    
 </launch>

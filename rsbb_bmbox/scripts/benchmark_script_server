@@ -12,10 +12,6 @@ from rsbb_benchmarking_messages.msg import SystemStatus
 from rockin_scoring.BenchmarkObjects import *
 
 
-
-
-
-
 class BenchmarkServer(object):
 	
 	def __init__(self):
@@ -39,8 +35,6 @@ class BenchmarkServer(object):
 	def execute_benchmark_callback(self, request):
 		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t robot: %s\t run: %i' % (request.benchmark_code, request.team, request.robot, request.run))
 		
-#		global execute_request
-#		global execute_request_info
 		self.execute_request = request.benchmark_code
 		self.execute_request_info = request
 		
@@ -51,15 +45,11 @@ class BenchmarkServer(object):
 	def terminate_benchmark_callback(self, request):
 		rospy.loginfo('terminate_benchmark_callback')
 		
-#		global execute_request
 		
 		if self.execute_request == None:
 			self.publish_system_status("restarting")
 			self._terminate_benchmark_request = True
 			return TerminateBenchmarkResponse(True)
-			
-		
-		if self.execute_request != None: print "can_terminate_benchmark: ", self.scripts[self.execute_request].can_terminate_benchmark()
 		
 		# TODO just restart the node if execute_request == None
 		
@@ -82,10 +72,8 @@ class BenchmarkServer(object):
 
 
 	def import_benchmark_scripts(self):
-	
-#		global scripts
-	
-		print "imported scripts:"
+		
+		rospy.loginfo("imported scripts:")
 	
 		for module_name in benchmark_scripts.__all__:
 			module = globals()[module_name]
@@ -100,25 +88,23 @@ class BenchmarkServer(object):
 					benchmark_code = benchmark_object.get_benchmark_code()
 				
 				except AttributeError:
-					raise BenchmarkCodeNotImplementedError("method get_benchmark_code not implemented in BenchmarkObject")
+					raise BenchmarkCodeNotImplementedError("benchmark_code not specified in BenchmarkObject")
 				
 				except TypeError:
 					raise BenchmarkCodeNotImplementedError("Wrong number of attributes in get_benchmark_code method")
 				
 			
 				if type(benchmark_code) != type(""):
-					print "type(benchmark_code) != type(\"\")"
-					raise BenchmarkCodeNotImplementedError("Method get_benchmark_code in BenchmarkObject should return a string")
+					raise BenchmarkCodeNotImplementedError("benchmark_code in BenchmarkObject should be a string")
 						
 				self.scripts[benchmark_code] = benchmark_object
 			
-				print benchmark_code
+				rospy.loginfo("\t%s", benchmark_code)
 			
 			
 			except BenchmarkCodeNotImplementedError as e:
 				self._status.status = SystemStatus.ERROR
 				self.publish_system_status("error")
-				print e.parameter
 				rospy.logerr("Error from script [%s]: %s", module_name, e.parameter)
 			
 			except ExecuteMethodNotImplementedError: #TODO useless
@@ -126,18 +112,16 @@ class BenchmarkServer(object):
 
 
 	def run(self):
-#		global execute_request
 		
-		rate = rospy.Rate(10) # 10hz
+		rate = rospy.Rate(10) # 10Hz
 		
-		print "\nready to execute imported benchmark scripts"
+		rospy.loginfo("\n\n\n\n\nready to execute imported benchmark scripts")
 		
 		while not rospy.is_shutdown():
 			
 			if self.execute_request:
 			
 				try:
-					print "start execute()"
 					self.scripts[self.execute_request].setup(self.execute_request_info.team, self.execute_request_info.run)
 					self.scripts[self.execute_request].wrapped_execute()
 				
@@ -160,9 +144,7 @@ class BenchmarkServer(object):
 					raise
 				
 				self.execute_request = None
-				print "finished execute()"
 				
-#				rospy.spin() #TODO shutdown
 				self.publish_system_status("restarting")
 				rospy.signal_shutdown("Restarting node")
 

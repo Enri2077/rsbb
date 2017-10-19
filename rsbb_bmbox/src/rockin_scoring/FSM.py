@@ -9,8 +9,8 @@ class FSM:
 			return False
 		
 		return True
-
-
+	
+	
 	def acquire(self):
 		self._lock.acquire()
 
@@ -29,8 +29,8 @@ class FSM:
 	
 	def payload(self):
 		return self._payload
-
-
+	
+	
 	def check_state(self, state):
 		if self._state != state:
 			rospy.logerr("Wrong state: expected %s, observed %s", self._states[state], self._states[self._state]);
@@ -57,7 +57,7 @@ class FSM:
 			return
 
 		rospy.logdebug("State transition: %s -> %s", self._state, new_state);
-		rospy.loginfo(">>> %s", self._states[new_state]);
+		rospy.logdebug(">>> %s", self._states[new_state]);
 		self._condvar.acquire()
 		self._state = new_state
 		self._payload = payload

@@ -726,22 +726,11 @@ public:
 		set_state(Time::now(), roah_rsbb_msgs::BenchmarkState_State_STOP, desc);
 
 		// if the benchmark has ended, it can be safely terminated by calling end_(), that destroys everything.
-		if(refbox_state_.benchmark_state == RefBoxState::END){
-			terminate_benchmark();
-		} else {
-
-			StopBenchmark stop_benchmark_request;
-			stop_benchmark_request.request.refbox_state = refbox_state_;
-
-			if (stop_benchmark_service_.call(stop_benchmark_request)){
-				ROS_INFO("Called stop_benchmark service");
-				if(!stop_benchmark_request.response.result) ROS_INFO("benchmark script server refused to acknowledge that the benchmark is stopped");
-			}else{
-				ROS_ERROR("Failed to call stop_benchmark service");
-			}
-
-			terminate_benchmark();
-		}
+		terminate_benchmark();
+//		if(refbox_state_.benchmark_state == RefBoxState::END){
+//		} else {
+//			terminate_benchmark();
+//		}
 
 	}
 
@@ -937,13 +926,23 @@ public:
 		timeout_timer_.stop_pause(Time());
 		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
 
-		TerminateBenchmark terminate_benchmark_request;
+		if(refbox_state_.benchmark_state != RefBoxState::END){
+			StopBenchmark stop_benchmark_request;
+			stop_benchmark_request.request.refbox_state = refbox_state_;
+			if (stop_benchmark_service_.call(stop_benchmark_request)){
+				ROS_INFO("Called stop_benchmark service");
+				if(!stop_benchmark_request.response.result) ROS_INFO("benchmark script server refused to acknowledge that the benchmark is stopped");
+			} else {
+				ROS_INFO("Tried to call stop_benchmark service but not available");
+			}
+		}
 
+		TerminateBenchmark terminate_benchmark_request;
 		if (terminate_benchmark_service_.call(terminate_benchmark_request)){
 			ROS_INFO("Called terminate_benchmark service");
 			if(!terminate_benchmark_request.response.result) ROS_INFO("benchmark script server refused to terminate benchmark (maybe it was not running a script)");
 		}else{
-			ROS_ERROR("Failed to call terminate_benchmark service");
+			ROS_WARN("Tried to call terminate_benchmark service but not available");
 		}
 
 		StopRecordRequest stop_record_request;
@@ -1120,7 +1119,7 @@ public:
 		// BmBox requests to end the benchmark
 		set_benchmark_state(now, RefBoxState::END); // that means the benchmark has ended naturally, so there is a score and the whole thing can be destroyed
 
-		phase_post("Benchmark complete! Received score from BmBox: " + req.score.data);
+		phase_post("Benchmark complete!");
 
 		res.refbox_state = refbox_state_;
 		res.result.data = true;

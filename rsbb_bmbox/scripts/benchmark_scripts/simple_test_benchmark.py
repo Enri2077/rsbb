@@ -1,111 +1,155 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rospy, yaml, time # TODO use rospy.time
+import rospy, yaml
 
 from rockin_scoring.BenchmarkObjects import BaseBenchmarkObject, GoalObject, ManualOperationObject
 
 
 class BenchmarkObject (BaseBenchmarkObject):
 	
-#	def get_benchmark_code(self, hello): return "STB" ### test
-#	def get_benchmark_code(self): return 5 ### test
+#T	def get_benchmark_code(self, hello): return "STB"
+#T	def get_benchmark_code(self): return 5
 	
-	def get_benchmark_code(self): return "STB"
-		
-#	def execute_(self): ### test
-#	def execute(self, hello): ### test
+#T	def get_benchmark_code(self): return "STB"
+#T	def execute_(self):
+#T	def execute(self, hello):
+	
+	benchmark_code = "STB"
+	
 	def execute(self):
 		
-		rospy.loginfo("simple_test_benchmark started")
-#		print "\n\n\n\n\n\n\n", self.__current_goal, "\n\n\n\n\n\n\n"
-		
 		BENCHMARK_RUNS = 2
-		runs = 0
-		execution_time = 0.0
+		i = 1
+		execution_time = rospy.Duration(0.0)
 		
 		
-		manual_operation_1 = ManualOperationObject("First Manual Operation")
+		##########################################
+		#            MANUAL OPERATION            #
+		##########################################
+			
+		manual_operation_first = ManualOperationObject("First Manual Operation")
 		
-		self.manual_operation(manual_operation_1)
+		self.request_manual_operation(manual_operation_first)
 		
-		print "First Manual Operation result: %s" % manual_operation_1.get_result()
+		##########################################
+		#     CHECK RESULT AND UPDATE SCORE      #
+		##########################################
 		
-		# Start the benchmark
-		while self.is_benchmark_running() and (runs < BENCHMARK_RUNS):
-			runs = runs + 1
+		if manual_operation_first.has_been_completed():
+			print "First Manual Operation result: %s" % manual_operation_first.get_result()
+			self.score["first_manual_operation"] = manual_operation_first.get_result()
+			self.save_and_publish_score()
+		else:
+			print "First Manual Operation NOT EXECUTED"
+			self.score["first_manual_operation"] = "not executed"
+			self.save_and_publish_score()
+		
+		if not self.is_benchmark_running():
+			if self.has_benchmark_timed_out():
+				print "BENCHMARK TIMEOUT"
+				return
+			elif self.has_benchmark_been_stopped():
+				print "BENCHMARK STOPPED"
+				return
+			else:
+				print "BENCHMARK ABORTED"
+				return
+		
+		
+		while self.is_benchmark_running() and (i <= BENCHMARK_RUNS):
 			
 			now = rospy.Time.now()
 			
 			##########################################
-			#            GOAL                        #
+			#                 GOAL i                 #
 			##########################################
 			
-#			goal_object = 
-#			goal_yaml_string = yaml.dump(goal_object)
-#			print "yaml object from string", yaml.load(goal_yaml_string)["goal"]
+			goal = GoalObject({"goal": "GOAL %d"%i, "details": 4}, 15.0)
 			
-			goal = GoalObject({"goal": "GOAL %d"%runs, "details": 4}, 15.0)
-			
-			# Send goal
 			self.request_goal(goal)
-#			self.request_goal() #TODO test this one
-			start_time = time.time()
+			start_time = rospy.Time.now()
 			
-			# Wait for result from client
-#			result_yaml = self.wait_goal_result()
 			self.wait_goal_result()
-			end_time = time.time()
+			end_time = rospy.Time.now()
 			
-			print "Goal result received:", goal.get_result()
+#T			while not goal.has_been_completed() and not goal.has_timed_out(): do something; rate.sleep()
 			
-			execution_time = execution_time + (end_time - start_time)
+			execution_time += end_time - start_time
+			rospy.loginfo("Execution time - %f" % execution_time.to_sec())
+			
+			
+			##########################################
+			#    CHECK RESULT i AND UPDATE SCORE     #
+			##########################################
+			
+			self.score["goal_%i"%i] = {}
+			self.score["goal_%i"%i]["timeout"] = goal.has_timed_out()
+			self.score["goal_%i"%i]["completed"] = goal.has_been_completed()
 			
 			if goal.has_timed_out():
 				print "GOAL TIMEOUT"
-				continue
-			else:
+			elif goal.has_been_completed():
+				print "GOAL COMPLETED:"
 				result = goal.get_result()
+				print "result:\n", result
+				self.score["goal_%i"%i]["result"] = result
+			else:
+				print "GOAL NOT COMPLETED"
 			
-			if self.is_goal_timed_out():
-				print "GOAL TIMEOUT"
+			self.save_and_publish_score()
+			
+			if self.is_goal_timed_out() and not goal.has_timed_out():
 				rospy.logerr("TIMEOUT from state and not from GoalObject")
-				execution_time = execution_time + (end_time - start_time)
-				continue
 			
-			if self.is_benchmark_ended():
-				print "BENCHMARK ENDED"
-				print self.get_end_reason()
-				break
+			if not self.is_benchmark_running():
+				print self.get_end_description()
+				
+				if self.has_benchmark_timed_out():
+					print "BENCHMARK TIMEOUT"
+				elif self.has_benchmark_been_stopped():
+					print "BENCHMARK STOPPED"
+				else:
+					print "BENCHMARK ABORTED"
 			
 			
-			# Evaluate execution time
-			execution_time = execution_time + (end_time - start_time)
-			
-			rospy.loginfo("Execution time - %f" % execution_time)
-			
-#			self.end_benchmark()
+			i += 1
+		
+		##########################################
+		#            MANUAL OPERATION            #
+		##########################################
+		
+		manual_operation_last = ManualOperationObject("Last Manual Operation")
+		
+		self.request_manual_operation(manual_operation_last)
 		
 		
-		if not self.is_benchmark_ended():
-			print "Starting final Manual Operation"
-			
-			manual_operation = ManualOperationObject("Notes from the referee:")
-			
-			self.manual_operation(manual_operation)
-			
-			print "Final Manual Operation result: %s" % manual_operation.get_result()
-			
-			# Evaluate final score
-			score = {
-				'score_1': "Some Score",
-				'score_2': "Some Score",
-				'execution_time': execution_time
-			}
-			
-			self.set_current_score(score)
-			
+		##########################################
+		#     CHECK RESULT AND UPDATE SCORE      #
+		##########################################
 		
+		if manual_operation_last.has_been_completed():
+			print "Last Manual Operation result: %s" % manual_operation_last.get_result()
+			self.score["last_manual_operation"] = manual_operation_last.get_result()
+			self.save_and_publish_score()
 		else:
-			print "Benchmark ended!!!!"
+			print "Last Manual Operation NOT EXECUTED"
+			self.score["last_manual_operation"] = "not executed"
+			self.save_and_publish_score()
+		
+		if not self.is_benchmark_running():
+			if self.has_benchmark_timed_out():
+				print "BENCHMARK TIMEOUT"
+			elif self.has_benchmark_been_stopped():
+				print "BENCHMARK STOPPED"
+			else:
+				print "BENCHMARK ABORTED"
+		
+		
+		##########################################
+		#            UPDATE SCORE                #
+		##########################################
+		
+		self.score["execution_time"] = execution_time.to_sec()
+		self.save_and_publish_score()
 

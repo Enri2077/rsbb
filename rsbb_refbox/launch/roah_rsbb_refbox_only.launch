@@ -1,4 +1,7 @@
 <launch>
+
+<group ns="rsbb">
+
   <arg name="rsbb_host" default="10.0.0.255"/>
   <arg name="rsbb_port" default="6666"/>
   <arg name="smartif_host" default="192.168.1.56"/>
@@ -20,7 +23,6 @@
     <param name="log_dir" type="string" value="$(arg log_dir)"/>
   </node>
 
-  <include file="$(find roah_rsbb)/launch/roah_rsbb_client.launch"/>
 
 <!--
   <include file="$(find roah_devices)/launch/run_real.launch">
@@ -36,5 +38,9 @@
     <param name="bell_ring_command" type="string" value="$(arg bell_ring_command)"/>
     <param name="timeout_ring_command" type="string" value="$(arg timeout_ring_command)"/>
   </node>
+
+</group>
+
+  <include file="$(find roah_rsbb)/launch/roah_rsbb_client.launch"/>
 
 </launch>
