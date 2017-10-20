@@ -6,7 +6,7 @@
 	
 		<node name="rsbb_bmbox"
 			pkg="rsbb_bmbox"
-			type="benchmark_script_server"
+			type="benchmark_script_server.py"
 			output="screen"
 			respawn="true"
 		/>

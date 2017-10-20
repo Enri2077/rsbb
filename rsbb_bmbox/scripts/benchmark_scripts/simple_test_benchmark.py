@@ -3,7 +3,7 @@
 
 import rospy, yaml
 
-from rockin_scoring.BenchmarkObjects import BaseBenchmarkObject, GoalObject, ManualOperationObject
+from rsbb_bmbox.BenchmarkObjects import BaseBenchmarkObject, GoalObject, ManualOperationObject
 
 
 class BenchmarkObject (BaseBenchmarkObject):
@@ -27,7 +27,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 		##########################################
 		#            MANUAL OPERATION            #
 		##########################################
-			
+		
 		manual_operation_first = ManualOperationObject("First Manual Operation")
 		
 		self.request_manual_operation(manual_operation_first)
@@ -70,10 +70,12 @@ class BenchmarkObject (BaseBenchmarkObject):
 			self.request_goal(goal)
 			start_time = rospy.Time.now()
 			
+			print "wait_goal_result"
+			
 			self.wait_goal_result()
 			end_time = rospy.Time.now()
 			
-#T			while not goal.has_been_completed() and not goal.has_timed_out(): do something; rate.sleep()
+#T			while not goal.has_been_completed() and not goal.has_timed_out(): rate.sleep(); self.complete_goal()
 			
 			execution_time += end_time - start_time
 			rospy.loginfo("Execution time - %f" % execution_time.to_sec())
@@ -99,9 +101,6 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			self.save_and_publish_score()
 			
-			if self.is_goal_timed_out() and not goal.has_timed_out():
-				rospy.logerr("TIMEOUT from state and not from GoalObject")
-			
 			if not self.is_benchmark_running():
 				print self.get_end_description()
 				
@@ -111,7 +110,6 @@ class BenchmarkObject (BaseBenchmarkObject):
 					print "BENCHMARK STOPPED"
 				else:
 					print "BENCHMARK ABORTED"
-			
 			
 			i += 1
 		

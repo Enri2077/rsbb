@@ -57,7 +57,7 @@ class FSM:
 			return
 
 		rospy.logdebug("State transition: %s -> %s", self._state, new_state);
-		rospy.logdebug(">>> %s", self._states[new_state]);
+		rospy.loginfo(">>> %s", self._states[new_state]);
 		self._condvar.acquire()
 		self._state = new_state
 		self._payload = payload

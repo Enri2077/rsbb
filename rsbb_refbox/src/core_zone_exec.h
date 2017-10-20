@@ -670,16 +670,13 @@ public:
 		current_goal_payload_ = "";
 		current_goal_timeout_ = 0;
 
-
-		// TODO specify if goal_timeout in service variable instead of refbox state
-
-		if(completed_by_robot || goal_timeout){
+		if(completed_by_robot || goal_timeout) {
 			GoalComplete goal_complete;
 			goal_complete.request.goal_result = result;
 			goal_complete.request.goal_timeout = goal_timeout;
 			goal_complete.request.refbox_state = refbox_state_;
 
-			if (goal_complete_service_.call(goal_complete)){
+			if (goal_complete_service_.call(goal_complete)) {
 				ROS_INFO("Called bmbox/goal_complete service");
 				if(!goal_complete.response.result) ROS_ERROR("benchmark script server refused to acknowledge goal is completed and receive result");
 			}else{
@@ -742,7 +739,8 @@ public:
 
 		if (phase_ != PHASE_EXEC) return;
 
-		set_goal_execution_state(Time::now(), RefBoxState::GOAL_TIMEOUT);
+//		set_goal_execution_state(Time::now(), RefBoxState::GOAL_TIMEOUT);
+		set_goal_execution_state(Time::now(), RefBoxState::READY);
 		set_state(Time::now(), roah_rsbb_msgs::BenchmarkState_State_STOP, "");
 		end_goal_execution(false, true, "");
 
@@ -926,7 +924,12 @@ public:
 		timeout_timer_.stop_pause(Time());
 		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
 
+		if(refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK){
+			set_benchmark_state(ros::Time::now(), RefBoxState::STOP);
+		}
+
 		if(refbox_state_.benchmark_state != RefBoxState::END){
+
 			StopBenchmark stop_benchmark_request;
 			stop_benchmark_request.request.refbox_state = refbox_state_;
 			if (stop_benchmark_service_.call(stop_benchmark_request)){
@@ -935,14 +938,15 @@ public:
 			} else {
 				ROS_INFO("Tried to call stop_benchmark service but not available");
 			}
-		}
 
-		TerminateBenchmark terminate_benchmark_request;
-		if (terminate_benchmark_service_.call(terminate_benchmark_request)){
-			ROS_INFO("Called terminate_benchmark service");
-			if(!terminate_benchmark_request.response.result) ROS_INFO("benchmark script server refused to terminate benchmark (maybe it was not running a script)");
-		}else{
-			ROS_WARN("Tried to call terminate_benchmark service but not available");
+			TerminateBenchmark terminate_benchmark_request;
+			if (terminate_benchmark_service_.call(terminate_benchmark_request)){
+				ROS_INFO("Called terminate_benchmark service");
+				if(!terminate_benchmark_request.response.result) ROS_INFO("benchmark script server refused to terminate benchmark (maybe it was not running a script)");
+			}else{
+				ROS_WARN("Tried to call terminate_benchmark service but not available");
+			}
+
 		}
 
 		StopRecordRequest stop_record_request;
@@ -1056,7 +1060,8 @@ public:
 		res.result.data = false;
 
 		if(!(((refbox_state_.goal_execution_state == RefBoxState::READY)
-		||  (refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT))
+//		||  (refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT)
+		)
 		&&  (refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK)
 		&&  (state_ == roah_rsbb_msgs::BenchmarkState_State_STOP
 		||   state_ == roah_rsbb_msgs::BenchmarkState_State_WAITING_RESULT))) {
@@ -1109,7 +1114,9 @@ public:
 		res.result.data = false;
 
 		if(!(refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK
-		&& (refbox_state_.goal_execution_state == RefBoxState::READY || refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT)
+		&& (refbox_state_.goal_execution_state == RefBoxState::READY
+//				|| refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT
+				)
 		&& refbox_state_.manual_operation_state == RefBoxState::READY)) {
 			printStates();
 			ROS_ERROR("Requested end of benchmark with inconsistent states");
@@ -1226,7 +1233,8 @@ public:
 
 			if (!(refbox_state_.goal_execution_state == RefBoxState::EXECUTING_GOAL
 			||  refbox_state_.goal_execution_state == RefBoxState::READY
-			||  refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT)){
+//			||  refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT
+			)){
 				ROS_ERROR("BenchmarkState_State_WAITING_RESULT and NOT RefBoxState::EXECUTING_GOAL or RefBoxState::GOAL_TIMEOUT");
 			}
 
