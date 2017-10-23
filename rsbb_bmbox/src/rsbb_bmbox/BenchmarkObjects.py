@@ -100,6 +100,12 @@ class RefBoxComm:
 		self._goal_started_server = rospy.Service("bmbox/goal_execution_started", GoalStarted, self.__goal_started_callback)
 		self._goal_complete_server = rospy.Service("bmbox/goal_complete", GoalComplete, self.__goal_complete_callback)
 		self._stop_benchmark_server = rospy.Service("bmbox/stop_benchmark", StopBenchmark, self.__stop_benchmark_callback)
+		
+		
+		
+		
+		### TEST
+		self.tmp = 0
 	
 	
 	def __pub_thread(self):
@@ -131,6 +137,12 @@ class RefBoxComm:
 	
 	def __goal_started_callback(self, request):
 		
+		### TEST
+#		if self.tmp < 5:
+#			self.tmp += 1
+#			print "TEST __goal_started_callback: return GoalStartedResponse(False)"
+#			return GoalStartedResponse(False)
+
 		if self.__current_goal == None:
 			rospy.logerr("goal_started_callback: cannot accept goal execution started event. No goal execution is pending")
 			self.__update_refbox_state(request.refbox_state)
@@ -145,6 +157,12 @@ class RefBoxComm:
 	
 	def __goal_complete_callback(self, request):
 		
+		### TEST
+#		if self.tmp < 5 and request.refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT:
+#			self.tmp += 1
+#			print "TEST __goal_complete_callback (GLOBAL_TIMEOUT): return GoalCompleteResponse(False)"
+#			return GoalCompleteResponse(False)
+
 		if self.__current_goal == None:
 			rospy.logerr("goal_complete_callback: cannot accept goal complete event. No goal execution is pending")
 			self.__update_refbox_state(request.refbox_state)
@@ -164,6 +182,12 @@ class RefBoxComm:
 	
 	
 	def __manual_operation_complete_callback(self, request):
+		
+		### TEST
+#		if self.tmp > 5:
+#			self.tmp += 1
+#			print "TEST __manual_operation_complete_callback: return ManualOperationCompleteResponse(False)"
+#			return ManualOperationCompleteResponse(False)
 		
 		if self.__current_manual_operation == None:
 			rospy.logerr("manual_operation_complete_callback: cannot accept manual operation result. No manual operation is pending")
@@ -367,12 +391,17 @@ class RefBoxComm:
 		return
 	
 	def terminate_benchmark(self):
+		
+		self.save_and_publish_score()
+		
 		if self.can_terminate_benchmark():
 			rospy.loginfo("calling signal_shutdown(\"Benchmark terminated\")")
 			
 			rospy.signal_shutdown("Benchmark terminated")
 			self.__fsm.notify_condition_variables()
 			self.__refbox_state_observer.notify_condition_variables()
+		
+		self.__fsm.update(BmBoxState.END)
 
 	
 	
@@ -489,7 +518,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	def __init__(self):
 		
-		self.__result_publisher = rospy.Publisher("current_benchmark_result", String, queue_size=10)
+		self.__result_publisher = rospy.Publisher("current_benchmark_result", String, queue_size=10, latch=True)
 		
 		self.__result_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined", 'end_description': "undefined"}, 'score': {}}
 		
