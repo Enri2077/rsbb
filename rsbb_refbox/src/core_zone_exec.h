@@ -156,11 +156,13 @@ public:
 		ROS_ERROR_STREAM("Did not find group " << score.group << " desc " << score.desc);
 	}
 
-	virtual void manual_operation_complete() {
+	virtual bool manual_operation_complete() {
 		ROS_WARN_STREAM("Ignored unexpected manual operation command");
+		return false;
 	}
-	virtual void manual_operation_complete(string result) {
+	virtual bool manual_operation_complete(string result) {
 		ROS_WARN_STREAM("Ignored unexpected manual operation command");
+		return false;
 	}
 
 	virtual void omf_complete() {
@@ -500,8 +502,6 @@ public:
 
 class ExecutingExternallyControlledBenchmark: public ExecutingSingleRobotBenchmark {
 
-	ServiceServer execute_manual_operation_service_, execute_goal_service_, end_benchmark_service_;
-
 	RefBoxState refbox_state_;
 
 	string benchmark_payload_;
@@ -510,14 +510,23 @@ class ExecutingExternallyControlledBenchmark: public ExecutingSingleRobotBenchma
 
 	Timer refbox_state_publish_timer_, check_status_timer_;
 	Publisher refbox_state_pub_;
-	Publisher record_request_publisher_;
 	Publisher system_status_publisher_;
 	Subscriber bmbox_state_subscriber_, bmbox_status_subscriber_, record_server_status_subscriber_;
-	ServiceClient init_benchmark_service_, terminate_benchmark_service_;
-	ServiceClient start_benchmark_service_, manual_operation_complete_service_, goal_execution_started_service_, goal_complete_service_, stop_benchmark_service_;
-	ServiceClient stop_record_service_client_;
 
+	// Incoming script server services
+	ServiceServer execute_manual_operation_service_, execute_goal_service_, end_benchmark_service_;
+
+	// Outgoing script server services
+	ServiceClient init_benchmark_service_, terminate_benchmark_service_;
+
+	// Outgoing script services
+	ServiceClient start_benchmark_service_, manual_operation_complete_service_, goal_execution_started_service_, goal_complete_service_, stop_benchmark_service_;
+
+	// Outgoing record server services and topics
+	ServiceClient stop_record_service_client_;
+ 	Publisher record_request_publisher_;
 	RecordRequest record_request_;
+
 	SystemStatus current_system_status_, last_bmbox_status_, last_record_server_status_;
 
 	string current_goal_payload_;
@@ -539,27 +548,30 @@ public:
 	ExecutingExternallyControlledBenchmark(CoreSharedState& ss, Event const& event, boost::function<void()> end, string const& robot_name) :
 		ExecutingSingleRobotBenchmark(ss, event, end, robot_name),
 
-		execute_manual_operation_service_(ss_.nh.advertiseService("bmbox/execute_manual_operation", &ExecutingExternallyControlledBenchmark::execute_manual_operation_callback, this)),
-		execute_goal_service_(ss_.nh.advertiseService("bmbox/execute_goal", &ExecutingExternallyControlledBenchmark::execute_goal_callback, this)),
-		end_benchmark_service_(ss_.nh.advertiseService("bmbox/end_benchmark", &ExecutingExternallyControlledBenchmark::end_benchmark_callback, this)),
-
 		refbox_state_publish_timer_(ss_.nh.createTimer(Duration(0.1), &ExecutingExternallyControlledBenchmark::refbox_state_publish_timer_callback, this)),
 		check_status_timer_(ss_.nh.createTimer(Duration(0.1), &ExecutingExternallyControlledBenchmark::check_status_timer_callback, this)),
+
 		refbox_state_pub_(ss_.nh.advertise<RefBoxState> ("bmbox/refbox_state", 1, true)),
-		record_request_publisher_(ss_.nh.advertise<RecordRequest> ("record_server/record_request", 1, true)),
 		system_status_publisher_(ss_.nh.advertise<SystemStatus>("rsbb_system_status/refbox/benchmark", 100)),
 		bmbox_state_subscriber_(ss_.nh.subscribe("bmbox/bmbox_state", 1, &ExecutingExternallyControlledBenchmark::bmbox_state_callback, this)),
 		bmbox_status_subscriber_(ss_.nh.subscribe("rsbb_system_status/bmbox", 1, &ExecutingExternallyControlledBenchmark::bmbox_status_callback, this)),
 		record_server_status_subscriber_(ss_.nh.subscribe("rsbb_system_status/record_server", 1, &ExecutingExternallyControlledBenchmark::record_server_status_callback, this)),
 
+		execute_manual_operation_service_(ss_.nh.advertiseService("bmbox/execute_manual_operation", &ExecutingExternallyControlledBenchmark::execute_manual_operation_callback, this)),
+		execute_goal_service_(ss_.nh.advertiseService("bmbox/execute_goal", &ExecutingExternallyControlledBenchmark::execute_goal_callback, this)),
+		end_benchmark_service_(ss_.nh.advertiseService("bmbox/end_benchmark", &ExecutingExternallyControlledBenchmark::end_benchmark_callback, this)),
+
 		init_benchmark_service_(ss_.nh.serviceClient<InitBenchmark>("bmbox/init_benchmark")),
 		terminate_benchmark_service_(ss_.nh.serviceClient<TerminateBenchmark>("bmbox/terminate_benchmark")),
+
 		start_benchmark_service_(ss_.nh.serviceClient<StartBenchmark>("bmbox/start_benchmark")),
 		manual_operation_complete_service_(ss_.nh.serviceClient<ManualOperationComplete>("bmbox/manual_operation_complete")),
 		goal_execution_started_service_(ss_.nh.serviceClient<GoalStarted>("bmbox/goal_execution_started")),
 		goal_complete_service_(ss_.nh.serviceClient<GoalComplete>("bmbox/goal_complete")),
 		stop_benchmark_service_(ss_.nh.serviceClient<StopBenchmark>("bmbox/stop_benchmark")),
+
 		stop_record_service_client_(ss_.nh.serviceClient<StopRecordRequestRequest>("record_server/stop_record_request")),
+		record_request_publisher_(ss_.nh.advertise<RecordRequest> ("record_server/record_request", 1, true)),
 
 		timeout_timer_(ss, event_.benchmark.timeout, true, boost::bind(&ExecutingExternallyControlledBenchmark::goal_timeout_callback, this)),
 		global_timeout_timer_(ss, event_.benchmark.total_timeout, true, boost::bind(&ExecutingExternallyControlledBenchmark::global_timeout_callback, this)),
@@ -579,16 +591,10 @@ public:
 		benchmark_request.request.team = event_.team;
 		benchmark_request.request.robot = "";
 		benchmark_request.request.run = event_.run;
-		if (init_benchmark_service_.call(benchmark_request)){
+		if (init_benchmark_service_.call(benchmark_request) && benchmark_request.response.result){
 			ROS_INFO("Called service init_benchmark: %s", (benchmark_request.response.result)?"true":"false");
-
-			if(!benchmark_request.response.result){
-				ROS_INFO("benchmark server refused to initialise benchmark. terminating benchmark execution.");
-				terminate_benchmark();
-			}
-
 		}else{
-			ROS_ERROR("Failed to call service init_benchmark");
+			ROS_ERROR("Failed to call service init_benchmark. terminating benchmark execution.");
 			terminate_benchmark();
 		}
 
@@ -649,7 +655,7 @@ public:
 		}
 
 		set_state(now, roah_rsbb_msgs::BenchmarkState_State_PREPARE, "Requested the robot to prepare for a new goal");
-		set_goal_execution_state(now, RefBoxState::TRANSMITTING_GOAL);
+		set_goal_execution_state(RefBoxState::TRANSMITTING_GOAL);
 
 	}
 
@@ -671,17 +677,16 @@ public:
 		current_goal_timeout_ = 0;
 
 		if(completed_by_robot || goal_timeout) {
-			GoalComplete goal_complete;
-			goal_complete.request.goal_result = result;
-			goal_complete.request.goal_timeout = goal_timeout;
-			goal_complete.request.refbox_state = refbox_state_;
-
-			if (goal_complete_service_.call(goal_complete)) {
-				ROS_INFO("Called bmbox/goal_complete service");
-				if(!goal_complete.response.result) ROS_ERROR("benchmark script server refused to acknowledge goal is completed and receive result");
-			}else{
-				ROS_ERROR("Failed to call bmbox/goal_complete service");
-			}
+//			GoalComplete goal_complete;
+//			goal_complete.request.goal_result = result;
+//			goal_complete.request.goal_timeout = goal_timeout;
+//			goal_complete.request.refbox_state = refbox_state_;
+//
+//			if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
+//				ROS_INFO("Called bmbox/goal_complete service");
+//			}else{
+//				ROS_ERROR("Failed to call bmbox/goal_complete service or bmbox refused to acknowledge that goal is completed and receive the result");
+//			}
 		}
 
 	}
@@ -694,19 +699,30 @@ public:
 		cout << "phase_exec" << endl;
 
 		phase_ = PHASE_EXEC;
-		set_benchmark_state(Time::now(), RefBoxState::EXECUTING_BENCHMARK);
-		set_goal_execution_state(Time::now(), RefBoxState::READY);
-		set_manual_operation_state(Time::now(), RefBoxState::READY);
+		set_benchmark_state(RefBoxState::EXECUTING_BENCHMARK);
+		set_goal_execution_state(RefBoxState::READY);
+		set_manual_operation_state(RefBoxState::READY);
 
 
 		StartBenchmark start_benchmark;
 		start_benchmark.request.refbox_state = refbox_state_;
 
-		if (start_benchmark_service_.call(start_benchmark)){
+//		if (start_benchmark_service_.call(start_benchmark)){
+//			ROS_INFO("Called bmbox/start_benchmark service");
+//			if(!start_benchmark.response.result) ROS_ERROR("benchmark script server refused to start benchmark");
+//		}else{
+//			ROS_ERROR("Failed to call bmbox/start_benchmark service");
+//		}
+
+
+		// if the service call fails in any way, abort the benchmark
+		if (start_benchmark_service_.call(start_benchmark) && start_benchmark.response.result){
 			ROS_INFO("Called bmbox/start_benchmark service");
-			if(!start_benchmark.response.result) ROS_ERROR("benchmark script server refused to start benchmark");
 		}else{
-			ROS_ERROR("Failed to call bmbox/start_benchmark service");
+			ROS_ERROR("Failed to call \"bmbox/start_benchmark\" service or bmbox refused to start benchmark. Aborting the benchmark");
+
+			// end the benchmark
+			phase_post("Failed to start");
 		}
 
 	}
@@ -739,13 +755,38 @@ public:
 
 		if (phase_ != PHASE_EXEC) return;
 
+		// advertise that a timeout has occurred
+		timeout_pub_.publish(std_msgs::Empty());
+
 //		set_goal_execution_state(Time::now(), RefBoxState::GOAL_TIMEOUT);
-		set_goal_execution_state(Time::now(), RefBoxState::READY);
 		set_state(Time::now(), roah_rsbb_msgs::BenchmarkState_State_STOP, "");
 		end_goal_execution(false, true, "");
 
-		// advertise that a timeout has occurred
-		timeout_pub_.publish(std_msgs::Empty());
+		GoalComplete goal_complete;
+		goal_complete.request.goal_result = "";
+		goal_complete.request.goal_timeout = true;
+		goal_complete.request.refbox_state = get_goal_execution_state_copy(RefBoxState::READY);
+
+		if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
+			ROS_INFO("Called bmbox/goal_complete service");
+			set_goal_execution_state(RefBoxState::READY);
+		}else{
+
+			Rate r(5);
+			for(int i=0; i<10; i++){
+				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal has timed out");
+				// TODO add waitForService?
+				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
+					set_goal_execution_state(RefBoxState::READY);
+//					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
+					break;
+				}
+				r.sleep();
+			}
+
+		}
+
+		set_goal_execution_state(RefBoxState::READY);
 
 	}
 
@@ -758,9 +799,38 @@ public:
 		if (phase_ != PHASE_EXEC) return;
 
 		// terminate the benchmark by calling phase_post
-		set_benchmark_state(Time::now(), RefBoxState::GLOBAL_TIMEOUT);
 		clear_manual_operation();
 		end_goal_execution();
+
+
+//		GoalComplete goal_complete;
+//		goal_complete.request.goal_result = "";
+//		goal_complete.request.goal_timeout = false;
+//		goal_complete.request.refbox_state = get_benchmark_state_copy(RefBoxState::GLOBAL_TIMEOUT);
+//
+//		if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
+//			ROS_INFO("Called \"bmbox/goal_complete\" service");
+//			set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
+//		}else{
+//
+//			Rate r(5);
+//			for(int i=0; i<10; i++){
+//				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal is ended");
+//				// TODO add waitForService?
+//				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
+//					set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
+////					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
+//					break;
+//				}
+//				r.sleep();
+//			}
+//
+//		}
+
+		set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
+
+
+
 
 		phase_post("Stopped due to global timeout!");
 
@@ -825,28 +895,28 @@ public:
 
 	void fill_2(Time const& now, roah_rsbb::ZoneState& zone){}
 
-	void set_refbox_state(Time const& now, RefBoxState::_benchmark_state_type benchmark_state, RefBoxState::_goal_execution_state_type goal_execution_state, RefBoxState::_manual_operation_state_type manual_operation_state) {
+//	void set_refbox_state(RefBoxState::_benchmark_state_type benchmark_state, RefBoxState::_goal_execution_state_type goal_execution_state, RefBoxState::_manual_operation_state_type manual_operation_state) {
+//
+//		if (refbox_state_.benchmark_state == benchmark_state && refbox_state_.benchmark_payload == ""
+//		&&  refbox_state_.goal_execution_state == goal_execution_state && refbox_state_.goal_execution_payload == ""
+//		&&  refbox_state_.manual_operation_state == manual_operation_state && refbox_state_.manual_operation_payload == "") {
+//			return;
+//		}
+//
+//		refbox_state_.benchmark_state = benchmark_state;
+//		refbox_state_.benchmark_payload = "";
+//
+//		refbox_state_.goal_execution_state = goal_execution_state;
+//		refbox_state_.goal_execution_payload = "";
+//
+//		refbox_state_.manual_operation_state = manual_operation_state;
+//		refbox_state_.manual_operation_payload = "";
+//
+//		refbox_state_pub_.publish(refbox_state_);
+//
+//	}
 
-		if (refbox_state_.benchmark_state == benchmark_state && refbox_state_.benchmark_payload == ""
-		&&  refbox_state_.goal_execution_state == goal_execution_state && refbox_state_.goal_execution_payload == ""
-		&&  refbox_state_.manual_operation_state == manual_operation_state && refbox_state_.manual_operation_payload == "") {
-			return;
-		}
-
-		refbox_state_.benchmark_state = benchmark_state;
-		refbox_state_.benchmark_payload = "";
-
-		refbox_state_.goal_execution_state = goal_execution_state;
-		refbox_state_.goal_execution_payload = "";
-
-		refbox_state_.manual_operation_state = manual_operation_state;
-		refbox_state_.manual_operation_payload = "";
-
-		refbox_state_pub_.publish(refbox_state_);
-
-	}
-
-	void set_benchmark_state(Time const& now, RefBoxState::_benchmark_state_type benchmark_state, string const& benchmark_payload = "") {
+	void set_benchmark_state(RefBoxState::_benchmark_state_type benchmark_state, string const& benchmark_payload = "") {
 
 		if (refbox_state_.benchmark_state == benchmark_state && benchmark_payload_ == benchmark_payload) return;
 
@@ -857,7 +927,18 @@ public:
 
 	}
 
-	void set_goal_execution_state(Time const& now, RefBoxState::_goal_execution_state_type goal_execution_state, string const& goal_execution_payload = "") {
+	RefBoxState get_benchmark_state_copy(RefBoxState::_benchmark_state_type benchmark_state, string const& benchmark_payload = "") {
+
+		RefBoxState refbox_state_copy = refbox_state_;
+
+		refbox_state_copy.benchmark_state = benchmark_state;
+		refbox_state_copy.benchmark_payload = benchmark_payload;
+
+		return refbox_state_copy;
+
+	}
+
+	void set_goal_execution_state(RefBoxState::_goal_execution_state_type goal_execution_state, string const& goal_execution_payload = "") {
 
 		if (refbox_state_.goal_execution_state == goal_execution_state && refbox_state_.goal_execution_payload == goal_execution_payload) return;
 
@@ -868,7 +949,18 @@ public:
 
 	}
 
-	void set_manual_operation_state(Time const& now, RefBoxState::_manual_operation_state_type manual_operation_state, string const& manual_operation_payload = "") {
+	RefBoxState get_goal_execution_state_copy(RefBoxState::_goal_execution_state_type goal_execution_state, string const& goal_execution_payload = "") {
+
+		RefBoxState refbox_state_copy = refbox_state_;
+
+		refbox_state_copy.goal_execution_state = goal_execution_state;
+		refbox_state_copy.goal_execution_payload = goal_execution_payload;
+
+		return refbox_state_copy;
+
+	}
+
+	void set_manual_operation_state(RefBoxState::_manual_operation_state_type manual_operation_state, string const& manual_operation_payload = "") {
 
 		if (refbox_state_.manual_operation_state == manual_operation_state && refbox_state_.manual_operation_payload == manual_operation_payload) return;
 
@@ -876,6 +968,17 @@ public:
 		refbox_state_.manual_operation_payload = manual_operation_payload;
 
 		refbox_state_pub_.publish(refbox_state_);
+
+	}
+
+	RefBoxState get_manual_operation_state_copy(RefBoxState::_manual_operation_state_type manual_operation_state, string const& manual_operation_payload = "") {
+
+		RefBoxState refbox_state_copy = refbox_state_;
+
+		refbox_state_copy.manual_operation_state = manual_operation_state;
+		refbox_state_copy.manual_operation_payload = manual_operation_payload;
+
+		return refbox_state_copy;
 
 	}
 
@@ -925,26 +1028,25 @@ public:
 		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
 
 		if(refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK){
-			set_benchmark_state(ros::Time::now(), RefBoxState::STOP);
+			set_benchmark_state(RefBoxState::STOP);
 		}
 
 		if(refbox_state_.benchmark_state != RefBoxState::END){
 
 			StopBenchmark stop_benchmark_request;
 			stop_benchmark_request.request.refbox_state = refbox_state_;
-			if (stop_benchmark_service_.call(stop_benchmark_request)){
+
+			if (stop_benchmark_service_.call(stop_benchmark_request) && stop_benchmark_request.response.result){
 				ROS_INFO("Called stop_benchmark service");
-				if(!stop_benchmark_request.response.result) ROS_INFO("benchmark script server refused to acknowledge that the benchmark is stopped");
 			} else {
-				ROS_INFO("Tried to call stop_benchmark service but not available");
+				ROS_INFO("Tried to call stop_benchmark service but not available or bmbox refused to acknowledge that the benchmark is stopped");
 			}
 
 			TerminateBenchmark terminate_benchmark_request;
-			if (terminate_benchmark_service_.call(terminate_benchmark_request)){
+			if (terminate_benchmark_service_.call(terminate_benchmark_request) && terminate_benchmark_request.response.result){
 				ROS_INFO("Called terminate_benchmark service");
-				if(!terminate_benchmark_request.response.result) ROS_INFO("benchmark script server refused to terminate benchmark (maybe it was not running a script)");
 			}else{
-				ROS_WARN("Tried to call terminate_benchmark service but not available");
+				ROS_INFO("Tried to call terminate_benchmark service but not available or bmbox refused to terminate benchmark (maybe it was not running a script)");
 			}
 
 		}
@@ -982,14 +1084,39 @@ public:
 
 	void stop() {
 
-		set_benchmark_state(Time::now(), RefBoxState::STOP);
 		end_goal_execution();
+
+//		GoalComplete goal_complete;
+//		goal_complete.request.goal_result = "";
+//		goal_complete.request.goal_timeout = false;
+//		goal_complete.request.refbox_state = get_benchmark_state_copy(RefBoxState::STOP);
+//
+//		if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
+//			ROS_INFO("Called \"bmbox/goal_complete\" service");
+//			set_benchmark_state(RefBoxState::STOP);
+//		}else{
+//
+//			Rate r(5);
+//			for(int i=0; i<10; i++){
+//				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal is ended");
+//				// TODO add waitForService?
+//				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
+//					set_benchmark_state(RefBoxState::STOP);
+////					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
+//					break;
+//				}
+//				r.sleep();
+//			}
+//
+//		}
+
+		set_benchmark_state(RefBoxState::STOP);
 
 		phase_post("");
 
 	}
 
-	void manual_operation_complete(string result) {
+	bool manual_operation_complete(string result) {
 		printStates();
 
 		if (!(
@@ -1000,23 +1127,25 @@ public:
 		{
 			printStates();
 			ROS_ERROR("manual_operation_complete(): could not terminate manual operation: inconsistent states");
-			return;
+			return false;
 		}
-
-		set_manual_operation_state(Time::now(), RefBoxState::READY, result);
 
 		ManualOperationComplete manual_operation_complete;
 		manual_operation_complete.request.manual_operation_result = result;
-		manual_operation_complete.request.refbox_state = refbox_state_;
+		manual_operation_complete.request.refbox_state = get_manual_operation_state_copy(RefBoxState::READY);
 
-		if (manual_operation_complete_service_.call(manual_operation_complete)){
+		if (manual_operation_complete_service_.call(manual_operation_complete) && manual_operation_complete.response.result){
 			ROS_INFO("Called bmbox/manual_operation_complete service");
-			if(!manual_operation_complete.response.result) ROS_ERROR("benchmark script server refused to terminate manual operation");
+			set_manual_operation_state(RefBoxState::READY, result);
+			clear_manual_operation();
+			return true;
 		}else{
-			ROS_ERROR("Failed to call bmbox/manual_operation_complete service");
+			ROS_ERROR("Failed to call \"bmbox/manual_operation_complete\" service or bmbox refused to terminate manual operation");
+			return false;
 		}
 
-		clear_manual_operation();
+		return false;
+
 	}
 
 
@@ -1043,7 +1172,7 @@ public:
 		// The manual operation is described by the string in the payload of the message
 		manual_operation_ = req.request.data;
 
-		set_manual_operation_state(Time::now(), RefBoxState::EXECUTING_MANUAL_OPERATION);
+		set_manual_operation_state(RefBoxState::EXECUTING_MANUAL_OPERATION, req.request.data);
 
 		res.refbox_state = refbox_state_;
 		res.result.data = true;
@@ -1124,7 +1253,7 @@ public:
 		}
 
 		// BmBox requests to end the benchmark
-		set_benchmark_state(now, RefBoxState::END); // that means the benchmark has ended naturally, so there is a score and the whole thing can be destroyed
+		set_benchmark_state(RefBoxState::END); // that means the benchmark has ended naturally, so there is a score and the whole thing can be destroyed
 
 		phase_post("Benchmark complete!");
 
@@ -1188,7 +1317,7 @@ public:
 
 					// Update Benchmark state to GOAL_TX
 					set_state(now, roah_rsbb_msgs::BenchmarkState_State_GOAL_TX, "Robot finished preparation, received goal from BmBox, starting execution");
-					set_goal_execution_state(now, RefBoxState::TRANSMITTING_GOAL);
+					set_goal_execution_state(RefBoxState::TRANSMITTING_GOAL);
 
 				} else {
 					ROS_ERROR("BenchmarkState_State_PREPARE and RobotState_State_WAITING_GOAL and NOT RefBoxState::TRANSMITTING_GOAL");
@@ -1206,18 +1335,17 @@ public:
 
 					cout << "receive_robot_state_2: robot received goal, started execution" << endl;
 
-					set_state(now, roah_rsbb_msgs::BenchmarkState_State_WAITING_RESULT, "Robot received goal, waiting for result");
-					set_goal_execution_state(now, RefBoxState::EXECUTING_GOAL);
-
-
 					GoalStarted goal_execution_started;
-					goal_execution_started.request.refbox_state = refbox_state_;
+					goal_execution_started.request.refbox_state = get_goal_execution_state_copy(RefBoxState::EXECUTING_GOAL);
 
-					if (goal_execution_started_service_.call(goal_execution_started)){
+					if (goal_execution_started_service_.call(goal_execution_started) && goal_execution_started.response.result){
 						ROS_INFO("Called bmbox/goal_execution_started service");
-						if(!goal_execution_started.response.result) ROS_ERROR("benchmark script server refused to acknowledge goal execution start");
+
+						set_state(now, roah_rsbb_msgs::BenchmarkState_State_WAITING_RESULT, "Robot received goal, waiting for result");
+						set_goal_execution_state(RefBoxState::EXECUTING_GOAL);
+
 					}else{
-						ROS_ERROR("Failed to call bmbox/goal_execution_started service");
+						ROS_ERROR("Failed to call bmbox/goal_execution_started service or bmbox refused to acknowledge goal execution start");
 					}
 
 				}
@@ -1243,8 +1371,20 @@ public:
 
 				cout << "receive_robot_state_2: received goal result" << endl;
 
-				set_goal_execution_state(now, RefBoxState::READY, msg.has_generic_result()?msg.generic_result():"");
 				end_goal_execution(true, false, msg.has_generic_result()?msg.generic_result():"");
+
+				GoalComplete goal_complete;
+				goal_complete.request.goal_result = msg.has_generic_result()?msg.generic_result():"";
+				goal_complete.request.goal_timeout = false;
+				goal_complete.request.refbox_state = get_goal_execution_state_copy(RefBoxState::READY);
+
+				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
+					ROS_INFO("Called bmbox/goal_complete service");
+					set_goal_execution_state(RefBoxState::READY, msg.has_generic_result()?msg.generic_result():"");
+				}else{
+					// TODO repeat call without relying on robot state callback
+					ROS_ERROR("Failed to call bmbox/goal_complete service or bmbox refused to acknowledge that goal is completed and receive the result");
+				}
 
 			}
 

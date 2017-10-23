@@ -173,23 +173,25 @@ public:
 		executing_benchmark_->set_score(score);
 	}
 
-	void manual_operation_complete() {
+	bool manual_operation_complete() {
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE (not executing, ignored)");
-			return;
+			return false;
 		}
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE");
-		executing_benchmark_->manual_operation_complete();
+
+		return executing_benchmark_->manual_operation_complete();
 	}
-	void manual_operation_complete(string result) {
+	bool manual_operation_complete(string result) {
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE (not executing, ignored)");
-			return;
+			return false;
 		}
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE Result: " << result);
-		executing_benchmark_->manual_operation_complete(result);
+
+		return executing_benchmark_->manual_operation_complete(result);
 	}
 
 	void omf_complete() {

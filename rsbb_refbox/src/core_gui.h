@@ -150,7 +150,11 @@ class CoreGui: boost::noncopyable {
 			ROS_WARN_STREAM("manual_operation_complete_callback: Could not find zone: " << req.zone);
 			return false;
 		}
-		zone->manual_operation_complete(req.manual_operation_result);
+
+//		zone->manual_operation_complete(req.manual_operation_result);
+
+		res.success = zone->manual_operation_complete(req.manual_operation_result);
+
 		return true;
 	}
 

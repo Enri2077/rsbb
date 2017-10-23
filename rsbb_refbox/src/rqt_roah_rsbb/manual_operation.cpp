@@ -95,8 +95,12 @@ void ManualOperation::complete() {
 	roah_rsbb::ZoneManualOperationResult z;
 	z.request.zone = param_direct("current_zone", string());
 	z.request.manual_operation_result = ui_.mo_result->toPlainText().toStdString();
-	ui_.mo_result->setPlainText("");
+
 	call_service("/core/manual_operation_complete", z);
+
+	if (z.response.success){
+		ui_.mo_result->setPlainText("");
+	}
 }
 }
 
