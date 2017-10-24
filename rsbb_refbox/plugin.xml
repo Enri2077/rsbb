@@ -45,6 +45,21 @@
     </qtgui>
   </class>
 
+  <class name="rqt_roah_rsbb/CurrentScore" type="rqt_roah_rsbb::CurrentScore" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      RoAH RSBB current score display GUI.
+    </description>
+    <qtgui>
+      <group>
+        <label>RoAH RSBB</label>
+        <icon type="theme">folder</icon>
+      </group>
+      <label>Current Score</label>
+      <icon type="theme">utilities-system-monitor</icon>
+      <statustip>Display RSBB current score</statustip>
+    </qtgui>
+  </class>
+
   <class name="rqt_roah_rsbb/LogDisplay" type="rqt_roah_rsbb::LogDisplay" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       RoAH RSBB log display GUI.

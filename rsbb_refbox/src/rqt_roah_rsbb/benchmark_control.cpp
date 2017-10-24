@@ -119,7 +119,14 @@ void BenchmarkControl::update() {
 
 		}
 
-		if (zone_changed) {
+		bool benchmark_changed = false;
+		if (previous_benchmark_ != current_zone->code || previous_schedule_ != to_qstring(current_zone->schedule)){
+			benchmark_changed = true;
+			previous_benchmark_ = current_zone->code;
+			previous_schedule_ = to_qstring(current_zone->schedule);
+		}
+
+		if (zone_changed || benchmark_changed) {
 			ui_.run_selector->setValue((int) current_zone->run);
 		}
 
@@ -128,7 +135,7 @@ void BenchmarkControl::update() {
 		ui_.code->setText(QString::fromStdString(current_zone->code));
 		ui_.timeout->setText(to_qstring(current_zone->timeout));
 		ui_.team->setText(QString::fromStdString(current_zone->team));
-		ui_.round->setText(QString::number(current_zone->round));
+		ui_.round->setText(QString::number(current_zone->run));
 		ui_.run_selector->setEnabled(current_zone->run_selector_enabled);
 //		ui_.run->setText(QString::number(current_zone->run));
 		ui_.sched->setText(to_qstring(current_zone->schedule));
@@ -140,6 +147,12 @@ void BenchmarkControl::update() {
 			QScrollBar* sb = ui_.state->verticalScrollBar();
 			sb->setValue(sb->maximum());
 		}
+
+		ui_.benchmark_state->setText(QString::fromStdString(current_zone->benchmark_state.empty() ? "--" : current_zone->benchmark_state));
+		ui_.goal_state->setText(QString::fromStdString(current_zone->goal_state.empty() ? "--" :  current_zone->goal_state));
+		ui_.manual_operation_state->setText(QString::fromStdString(current_zone->manual_operation_state.empty() ? "--" :  current_zone->manual_operation_state));
+		ui_.bmscript_state->setText(QString::fromStdString(current_zone->bmscript_state.empty() ? "--" :  current_zone->bmscript_state));
+		ui_.robot_state->setText(QString::fromStdString(current_zone->robot_state.empty() ? "--" :  current_zone->robot_state));
 
 		ui_.connect->setEnabled(current_zone->connect_enabled);
 		ui_.disconnect->setEnabled(current_zone->disconnect_enabled);

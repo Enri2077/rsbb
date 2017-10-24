@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>751</width>
-    <height>317</height>
+    <width>614</width>
+    <height>393</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,7 +226,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0,0,0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0,0,0,0,0,0,0,0,0">
      <item>
       <widget class="QLabel" name="timer">
        <property name="font">
@@ -245,15 +245,111 @@
      <item>
       <widget class="QPlainTextEdit" name="state">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>30</height>
+        </size>
        </property>
        <property name="readOnly">
         <bool>true</bool>
        </property>
       </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <widget class="QLabel" name="benchmark_state_label">
+         <property name="text">
+          <string>Benchmark State</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="benchmark_state">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QLabel" name="goal_state_label">
+         <property name="text">
+          <string>Goal State</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="goal_state">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_7">
+       <item>
+        <widget class="QLabel" name="manual_operation_state_label">
+         <property name="text">
+          <string>Manual Op State</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="manual_operation_state">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <item>
+        <widget class="QLabel" name="bmscript_state_label">
+         <property name="text">
+          <string>BmScript State</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="bmscript_state">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <widget class="QLabel" name="robot_state_label">
+         <property name="text">
+          <string>Robot State</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="robot_state">
+         <property name="text">
+          <string>--</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">

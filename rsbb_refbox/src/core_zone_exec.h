@@ -847,8 +847,14 @@ public:
 		case PHASE_POST:	break;
 		}
 
-		zone.state = state_desc_;
 		zone.manual_operation = manual_operation_;
+		zone.state = state_desc_;
+
+		zone.benchmark_state = get_refbox_state_string(refbox_state_.benchmark_state);
+		zone.goal_state = get_refbox_state_string(refbox_state_.goal_execution_state);
+		zone.manual_operation_state = get_refbox_state_string(refbox_state_.manual_operation_state);
+		zone.bmscript_state = get_bmbox_state_string(last_bmbox_state_->state);
+		zone.robot_state = get_robot_state_string(printStates_robot_state_);
 
 
 		if (now - last_bmbox_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS)) {
@@ -858,11 +864,7 @@ public:
 			zone.start_enabled = (phase_ == PHASE_PRE);
 		}
 
-//		if (refbox_state_pub_.getNumSubscribers() == 0) zone.state = "WARNING: Not connected to BmBox script. Cannot start.";
-//		zone.start_enabled = (phase_ == PHASE_PRE) && (refbox_state_pub_.getNumSubscribers() > 0);
-
 		zone.stop_enabled  = (phase_ == PHASE_EXEC);
-//		zone.stop_enabled = !zone.start_enabled;
 
 		const size_t log_size = param_direct<int> ("~display_log_size", 3000);
 		zone.log = display_log_.last(log_size);
@@ -1392,9 +1394,63 @@ public:
 		}
 	}
 
+	string get_bmbox_state_string(BmBoxState::_state_type r){
+		string s;
+
+		switch (r) {
+		case BmBoxState::COMPLETED_MANUAL_OPERATION:	s = "COMP_MO";	 		break;
+		case BmBoxState::END:							s = "END"; 					break;
+		case BmBoxState::EXECUTING_GOAL:				s = "EXEC_GOAL"; 		break;
+		case BmBoxState::READY: 						s = "READY"; 				break;
+		case BmBoxState::START: 						s = "START"; 				break;
+		case BmBoxState::TRANSMITTING_GOAL: 			s = "TX_GOAL"; 	break;
+		case BmBoxState::TRANSMITTING_SCORE: 			s = "TX_SCORE"; 	break;
+		case BmBoxState::WAITING_CLIENT: 				s = "WAITING_START"; 		break;
+		case BmBoxState::WAITING_MANUAL_OPERATION: 		s = "WAITING_MO"; 			break;
+		case BmBoxState::WAITING_RESULT: 				s = "WAITING_RESULT"; 		break;
+		default:										s = "UNKNOWN";				break;
+		}
+
+		return s;
+	}
 
 
+	string get_refbox_state_string(RefBoxState::_benchmark_state_type r){
+		string s;
 
+		switch (r) {
+		case RefBoxState::START:						s = "START";				break;
+		case RefBoxState::EXECUTING_BENCHMARK:			s = "EXECUTING";	break;
+		case RefBoxState::END:							s = "END";					break;
+		case RefBoxState::STOP:							s = "STOP";					break;
+		case RefBoxState::EMERGENCY_STOP:				s = "EMERGENCY_STOP";		break;
+		case RefBoxState::ERROR:						s = "ERROR";				break;
+		case RefBoxState::GLOBAL_TIMEOUT:				s = "GLOBAL_TIMEOUT";		break;
+		case RefBoxState::READY:						s = "READY";				break;
+		case RefBoxState::TRANSMITTING_GOAL:			s = "TX_GOAL";	break;
+		case RefBoxState::EXECUTING_GOAL:				s = "EXEC_GOAL";		break;
+		case RefBoxState::GOAL_TIMEOUT:					s = "GOAL_TIMEOUT";			break;
+		case RefBoxState::EXECUTING_MANUAL_OPERATION:	s = "EXEC_M_O";			break;
+		default:										s = "UNKNOWN";				break;
+		}
+
+		return s;
+	}
+
+	string get_robot_state_string(roah_rsbb_msgs::RobotState::State r){
+		string s;
+
+		switch (r) {
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_PREPARING:			s = "PREPARING"; 		break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_WAITING_GOAL:		s = "WAITING_GOAL"; 	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_EXECUTING:			s = "EXECUTING";		break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_RESULT_TX:			s = "RESULT_TX"; 		break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_STOP:				s = "STOP"; 			break;
+		default:																	s = "UNKNOWN";			break;
+		}
+
+		return s;
+	}
 
 	void printStates(){
 

@@ -11,6 +11,11 @@ time schedule
 
 duration timer
 string state
+string benchmark_state
+string goal_state
+string manual_operation_state
+string bmscript_state
+string robot_state
 
 string manual_operation
 

@@ -17,50 +17,42 @@
  * along with RoAH RSBB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __RQT_ROAH_RSBB_BENCHMARK_CONTROL_H__
-#define __RQT_ROAH_RSBB_BENCHMARK_CONTROL_H__
-
-#include <set>
+#ifndef __RQT_ROAH_RSBB_CURRENT_SCORE_H__
+#define __RQT_ROAH_RSBB_CURRENT_SCORE_H__
 
 #include <QTimer>
 
 #include <ros/ros.h>
 #include <rqt_gui_cpp/plugin.h>
 
-#include <ui_benchmark_control.h>
-#include <roah_rsbb/CoreToGui.h>
+#include <ui_current_score.h>
+#include <std_msgs/String.h>
+//#include <roah_rsbb/CoreToGui.h>
 #include "topic_receiver.h"
 
-namespace rqt_roah_rsbb {
-class BenchmarkControl: public rqt_gui_cpp::Plugin {
-Q_OBJECT
 
-public:
-	BenchmarkControl();
-	virtual void initPlugin(qt_gui_cpp::PluginContext& context);
-	virtual void shutdownPlugin();
 
-private:
-	Ui::BenchmarkControl ui_;
-	QWidget* widget_;
-	QTimer update_timer_;
-	TopicReceiver<roah_rsbb::CoreToGui> core_rcv_;
+namespace rqt_roah_rsbb
+{
+  class CurrentScore
+    : public rqt_gui_cpp::Plugin
+  {
+      Q_OBJECT
 
-	std::set<std::string> known_zones_;
-	std::string current_zone_, previous_zone_, previous_benchmark_;
-	QString previous_schedule_;
+    public:
+      CurrentScore();
+      virtual void initPlugin (qt_gui_cpp::PluginContext& context);
+      virtual void shutdownPlugin();
 
-private slots:
-	void update();
-	void zone(QString const& zone);
-	void run(int const& zone);
-	void connect_s();
-	void disconnect();
-	void start();
-	void stop();
-	void previous();
-	void next();
-};
+    private:
+      Ui::CurrentScore ui_;
+      QWidget* widget_;
+      QTimer update_timer_;
+      TopicReceiver<std_msgs::String> result_rcv_;
+
+    private slots:
+      void update();
+  };
 }
 
 #endif
