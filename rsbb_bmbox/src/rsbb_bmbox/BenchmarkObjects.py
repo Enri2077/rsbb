@@ -13,6 +13,7 @@ from StateObserver import StateObserver
 from threading import Condition, Lock, Thread
 from os import path, makedirs, rename
 from datetime import date, datetime
+from dateutil.tz import tzlocal
 from exceptions import NotImplementedError
 import errno
 
@@ -518,6 +519,8 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	def __init__(self):
 		
+		self.__date_string_format = "%Y-%m-%d_%H:%M:%S_%Z(%z)"
+		
 		self.__result_publisher = rospy.Publisher("current_benchmark_result", String, queue_size=10, latch=True)
 		
 		self.__result_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined", 'end_description': "undefined"}, 'score': {}}
@@ -586,6 +589,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	def save_and_publish_score(self):
 		self.__result_object['benchmark_info']['end_description'] = self.get_end_description()
+		self.__result_object['benchmark_info']['end_time'] = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__write_result_file()
 		if not rospy.is_shutdown():
 			self.__result_publisher.publish(String(data = yaml.safe_dump(self.__result_object, default_flow_style=False)))
@@ -609,12 +613,14 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		RefBoxComm.__init__(self)
 
 		# insert the benchmark informations in the yaml result object
+		datetime_string = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__result_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
 		self.__result_object['benchmark_info']['team'] = team
 		self.__result_object['benchmark_info']['run'] = run
 		self.__result_object['benchmark_info']['end_description'] = "initialised"
+		self.__result_object['benchmark_info']['start_time'] = datetime_string
 		
-		self.__result_filename = "result_run_%i_%s.yaml" % (self.get_benchmark_run(), datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
+		self.__result_filename = "result_run_%i_%s.yaml" % (self.get_benchmark_run(), datetime_string)
 		
 		self.__write_result_file()
 	
