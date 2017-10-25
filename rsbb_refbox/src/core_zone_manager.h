@@ -44,6 +44,7 @@ public:
 			ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry!");
 			abort_rsbb();
 		}
+
 		name_ = zone_node["zone"].as<string>();
 
 		if (!zone_node["schedule"]) {
@@ -57,15 +58,23 @@ public:
 		}
 
 		for (YAML::Node const& event_node : zone_node["schedule"]) {
+
 			Event e = Event(event_node);
 			e.benchmark = ss_.benchmarks.get(e.benchmark_code);
+
 			if (e.team != "ALL") {
 				e.password = ss_.passwords.get(e.team);
 			}
+
 			events_.insert(make_pair(e.scheduled_time, e));
 
-			if (!((e.benchmark_code == "HGTKMH") || (e.benchmark_code == "HWV") || (e.benchmark_code == "HCFGAC") || (e.benchmark_code == "HOPF") || (e.benchmark_code == "HNF")
-					|| (e.benchmark_code == "HSUF") || (e.benchmark_code == "STB"))) {
+			if (!( (e.benchmark_code == "HGTKMH")
+				|| (e.benchmark_code == "HWV")
+				|| (e.benchmark_code == "HCFGAC")
+				|| (e.benchmark_code == "HOPF")
+				|| (e.benchmark_code == "HNF")
+				|| (e.benchmark_code == "HSUF")
+				|| (e.benchmark_code == "STB") )) {
 				ROS_FATAL_STREAM("Zone " << name_ << ": unsupported benchmark code " << e.benchmark_code);
 				abort_rsbb();
 			}
@@ -77,13 +86,20 @@ public:
 				}
 			}
 
-			if ((e.benchmark_code == "HGTKMH") || (e.benchmark_code == "HWV") || (e.benchmark_code == "HCFGAC") || (e.benchmark_code == "HOPF") || (e.benchmark_code == "HNF")
-					|| (e.benchmark_code == "STB")) {
+			if (   (e.benchmark_code == "HGTKMH")
+				|| (e.benchmark_code == "HWV")
+				|| (e.benchmark_code == "HCFGAC")
+				|| (e.benchmark_code == "HOPF")
+				|| (e.benchmark_code == "HNF")
+				|| (e.benchmark_code == "STB")) {
+
 				if (e.team == "ALL") {
 					ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code " << e.benchmark_code << " not supported for team ALL");
 					abort_rsbb();
 				}
+
 			}
+
 		}
 
 		if (events_.empty()) {
@@ -92,17 +108,23 @@ public:
 		}
 
 		current_event_ = events_.begin();
+
 	}
 
 	string name() const {
+
 		return name_;
+
 	}
 
 	void end() {
+
 		getGlobalCallbackQueue()->addCallback(boost::make_shared<roah_rsbb::CallbackItem>(boost::bind(&unique_ptr<ExecutingBenchmark>::reset, &executing_benchmark_, nullptr)));
+
 	}
 
 	void connect() {
+
 		if (executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " CONNECT (already issued)");
 			return;
@@ -134,26 +156,43 @@ public:
 
 		bool ok = false;
 		do {
+
 			try {
-				if ((current_event_->second.benchmark_code == "HGTKMH") || (current_event_->second.benchmark_code == "HWV")
-						|| (current_event_->second.benchmark_code == "HCFGAC")) {
+
+				if ((current_event_->second.benchmark_code == "HGTKMH")
+				 || (current_event_->second.benchmark_code == "HWV")
+				 || (current_event_->second.benchmark_code == "HCFGAC")) {
+
 					executing_benchmark_.reset(new ExecutingSimpleBenchmark(ss_, current_event_->second, boost::bind(&Zone::end, this), ri.robot));
-				} else if ((current_event_->second.benchmark_code == "HOPF") || (current_event_->second.benchmark_code == "HNF")
+
+				} else if ((current_event_->second.benchmark_code == "HOPF")
+						|| (current_event_->second.benchmark_code == "HNF")
 						|| (current_event_->second.benchmark_code == "STB")) {
+
 					executing_benchmark_.reset(new ExecutingExternallyControlledBenchmark(ss_, current_event_->second, boost::bind(&Zone::end, this), ri.robot));
+
 				} else {
+
 					ROS_FATAL_STREAM("Zone " << name_ << " unsupported benchmark code: " << current_event_->second.benchmark_code);
 					abort_rsbb();
+
 				}
+
 				ok = true;
+
 			} catch (const std::exception& exc) {
+
 				std::cerr << exc.what();
 				ROS_ERROR_STREAM("Failed to create a private channel. Retrying on next port.");
+
 			}
+
 		} while (!ok);
+
 	}
 
 	void disconnect() {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " DISCONNECT (not executing, ignored)");
 			return;
@@ -161,9 +200,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " DISCONNECT");
 		executing_benchmark_->terminate_benchmark();
+
 	}
 
 	void set_score(roah_rsbb::Score const& score) {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " SET_SCORE (not executing, ignored)");
 			return;
@@ -171,9 +212,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " SET_SCORE");
 		executing_benchmark_->set_score(score);
+
 	}
 
 	bool manual_operation_complete() {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE (not executing, ignored)");
 			return false;
@@ -182,8 +225,11 @@ public:
 		ROS_DEBUG_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE");
 
 		return executing_benchmark_->manual_operation_complete();
+
 	}
+
 	bool manual_operation_complete(string result) {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE (not executing, ignored)");
 			return false;
@@ -192,9 +238,11 @@ public:
 		ROS_DEBUG_STREAM("Zone: " << name() << " MANUAL_OPERATION_COMPLETE Result: " << result);
 
 		return executing_benchmark_->manual_operation_complete(result);
+
 	}
 
 	void omf_complete() {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " omf_complete (not executing, ignored)");
 			return;
@@ -202,9 +250,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " omf_complete");
 		executing_benchmark_->omf_complete();
+
 	}
 
 	void omf_damaged(uint8_t damaged) {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " omf_damaged (not executing, ignored)");
 			return;
@@ -212,9 +262,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " omf_damaged");
 		executing_benchmark_->omf_damaged(damaged);
+
 	}
 
 	void omf_button(uint8_t button) {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " omf_button (not executing, ignored)");
 			return;
@@ -222,9 +274,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " omf_button");
 		executing_benchmark_->omf_button(button);
+
 	}
 
 	void start() {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " START (not executing, ignored)");
 			return;
@@ -232,9 +286,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " START");
 		executing_benchmark_->start();
+
 	}
 
 	void stop() {
+
 		if (!executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " STOP (not executing, ignored)");
 			return;
@@ -242,9 +298,11 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " STOP");
 		executing_benchmark_->stop();
+
 	}
 
 	void previous() {
+
 		if (executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " PREVIOUS (executing, ignored)");
 			return;
@@ -255,9 +313,11 @@ public:
 		if (current_event_ != events_.begin()) {
 			--current_event_;
 		}
+
 	}
 
 	void next() {
+
 		if (executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " NEXT (executing, ignored)");
 			return;
@@ -268,9 +328,11 @@ public:
 		if (current_event_ != prev(events_.end())) {
 			++current_event_;
 		}
+
 	}
 
 	void set_run(int run) {
+
 		if (executing_benchmark_) {
 			ROS_WARN_STREAM("Zone: " << name() << " SET RUN (executing, ignored)");
 			return;
@@ -279,9 +341,11 @@ public:
 		ROS_DEBUG_STREAM("Zone: " << name() << " SET RUN: " << run);
 
 		current_event_->second.run = run; // TODO
+
 	}
 
 	roah_rsbb::ZoneState msg(Time const& now) {
+
 		roah_rsbb::ZoneState zone;
 
 		zone.zone = name();
@@ -296,6 +360,7 @@ public:
 		zone.schedule = current_event_->second.scheduled_time;
 
 		if (executing_benchmark_) {
+
 			executing_benchmark_->fill(now, zone);
 
 			zone.run_selector_enabled = false;
@@ -303,7 +368,9 @@ public:
 			zone.disconnect_enabled = true;
 			zone.prev_enabled = false;
 			zone.next_enabled = false;
+
 		} else {
+
 			zone.timer = current_event_->second.benchmark.timeout;
 			zone.state = "";
 			zone.manual_operation = "";
@@ -312,28 +379,40 @@ public:
 			zone.stop_enabled = false;
 
 			Duration allowed_skew = Duration(param_direct<double>("~allowed_skew", 0.5));
+
 			if (current_event_->second.benchmark.code == "HSUF") {
+
 				vector<string> teams_out_of_sync;
 				for (roah_rsbb::RobotInfo const& ri : ss_.active_robots.get()) {
 					if (((-allowed_skew) >= ri.skew) || (ri.skew >= allowed_skew)) {
 						teams_out_of_sync.push_back(ri.team);
 					}
 				}
+
 				if (teams_out_of_sync.empty()) {
+
 					zone.connect_enabled = true;
 					add_to_sting(zone.state) << "Benchmark will start with all active robots";
+
 				} else {
+
 					zone.connect_enabled = false;
+
 					add_to_sting t(zone.state);
 					t << "Robots with clock skew:";
 					for (string const& i : teams_out_of_sync) {
 						t << " " << i;
 					}
+
 				}
+
 			} else if (ss_.benchmarking_robots.count(current_event_->second.team)) {
+
 				zone.connect_enabled = false;
 				add_to_sting(zone.state) << "Robot is already executing another benchmark";
+
 			} else {
+
 				roah_rsbb::RobotInfo ri = ss_.active_robots.get(current_event_->second.team);
 				if (ri.team.empty()) {
 					zone.connect_enabled = false;
@@ -347,6 +426,7 @@ public:
 						add_to_sting(zone.state) << "Clock skew too large: " + boost::lexical_cast<string>(ri.skew);
 					}
 				}
+
 			}
 
 			zone.run_selector_enabled = true;
@@ -356,30 +436,37 @@ public:
 		}
 
 		return zone;
+
 	}
 
 	void msg(Time const& now, multimap<Time, roah_rsbb::ScheduleInfo>& map) {
+
 		for (multimap<Time, Event>::iterator i = events_.begin(); i != events_.end(); ++i) {
+
 			roah_rsbb::ScheduleInfo msg;
+
 			msg.team = i->second.team;
 			msg.benchmark = i->second.benchmark.desc;
 			msg.round = i->second.round;
 			msg.run = i->second.run;
 			msg.time = to_string(i->second.scheduled_time);
 			msg.running = ((i == current_event_) && executing_benchmark_);
+
 			map.insert(make_pair(i->second.scheduled_time, msg));
+
 		}
+
 	}
 };
 
 class CoreZoneManager: boost::noncopyable {
-	CoreSharedState& ss_;
 
+	CoreSharedState& ss_;
 	map<string, Zone::Ptr> zones_;
 
 public:
-	CoreZoneManager(CoreSharedState& ss) :
-			ss_(ss) {
+	CoreZoneManager(CoreSharedState& ss) : ss_(ss) {
+
 		using namespace YAML;
 
 		Node file = LoadFile(param_direct<string>("~schedule_file", "schedule.yaml"));
@@ -391,30 +478,39 @@ public:
 			Zone::Ptr zone = make_shared<Zone>(ss_, zone_node);
 			zones_[zone->name()] = zone;
 		}
+
 	}
 
 	Zone::Ptr get(string const& name) {
+
 		auto zone = zones_.find(name);
+
 		if (zone != zones_.end()) {
 			return zone->second;
 		}
+
 		return Zone::Ptr();
+
 	}
 
 	void msg(Time const& now, vector<roah_rsbb::ZoneState>& msg) {
+
 		for (auto const& i : zones_) {
 			if (i.second) {
 				msg.push_back(i.second->msg(now));
 			}
 		}
+
 	}
 
 	void msg(Time const& now, multimap<Time, roah_rsbb::ScheduleInfo>& map) {
+
 		for (auto const& i : zones_) {
 			if (i.second) {
 				i.second->msg(now, map);
 			}
 		}
+
 	}
 };
 
