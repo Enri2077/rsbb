@@ -235,7 +235,7 @@ bool stop_record_callback(StopRecordRequest::Request& req, StopRecordRequest::Re
 int main(int argc, char** argv) {
 
 	ros::init(argc, argv, "record_node");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh, pnh("~");
 	ROS_INFO("Starting record node");
 
 	system_status_publisher_ = nh.advertise<SystemStatus>(RSBB_SYSTEM_STATUS_MESSAGES_TOPIC_NAME, 100);
@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
 	current_record_request_.run = 0;
 
 	// get the parameters
-	if (!nh.getParam("topics_list", topics_list)) {
+	if (!pnh.getParam("topics_list", topics_list)) {
 		ROS_ERROR_STREAM("param topics_list not found or not a list of strings");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
@@ -271,7 +271,7 @@ int main(int argc, char** argv) {
 		restart_node();
 	}
 
-	if (!nh.getParam("base_record_directory", base_path_str)) {
+	if (!pnh.getParam("base_record_directory", base_path_str)) {
 		ROS_ERROR_STREAM("param base_record_directory not found");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");

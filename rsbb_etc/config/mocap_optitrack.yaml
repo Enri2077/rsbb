@@ -1,0 +1,44 @@
+rigid_bodies:
+#  '1':
+#    pose: origin/pose
+#    pose2d: origin/pose2d
+#    child_frame_id: origin
+#    parent_frame_id: world
+    
+#  '2':
+#    pose: ref_board/pose
+#    pose2d: ref_board/pose2d
+#    child_frame_id: ref_board
+#    parent_frame_id: world
+    
+  '3':
+    pose: robot_at_home/pose
+    pose2d: robot_at_home/pose2d
+    child_frame_id: robot_at_home
+    parent_frame_id: world
+    
+#  '4':
+#    pose: robot/pose
+#    pose2d: robot/pose2d
+#    child_frame_id: robot_at_work
+#    parent_frame_id: world
+    
+#  '5':
+#    pose: robot_at_work/pose
+#    pose2d: robot_at_work/pose2d
+#    child_frame_id: robot_at_work
+#    parent_frame_id: world
+    
+  '6':
+    pose: origin/pose
+    pose2d: origin/pose2d
+    child_frame_id: origin
+    parent_frame_id: world
+    
+  '7':
+    pose: ref_board/pose
+    pose2d: ref_board/pose2d
+    child_frame_id: ref_board
+    parent_frame_id: world
+
+# the commented ones are work's markersets. Here there should be all and only the home's ones.

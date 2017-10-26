@@ -1,53 +1,38 @@
 <launch>
-
-<group ns="rsbb">
-
-  <arg name="rsbb_host" default="10.0.0.255"/>
-  <arg name="rsbb_port" default="6666"/>
-  <arg name="smartif_host" default="192.168.1.56"/>
-  <arg name="benchmarks_file" default="$(find roah_rsbb)/config/benchmarks.yaml"/>
-  <arg name="schedule_file" default="$(find roah_rsbb)/config/schedule.yaml"/>
-  <arg name="passwords_file" default="$(find roah_rsbb)/config/passwords.yaml"/>
-  <arg name="log_dir" default="$(find roah_rsbb)/log"/>
-  <arg name="bell_ring_command" default="mplayer $(find roah_rsbb)/bell.mp3"/>
-  <arg name="timeout_ring_command" default="mplayer $(find roah_rsbb)/timeout.mp3"/>
   
-  <node pkg="roah_rsbb" type="shutdown_service" name="roah_rsbb_core_shutdown" required="true"/>
+  <group ns="rsbb">
+    
+    <node name="rsbb_bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" output="screen" respawn="true" >
+      <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
+    </node>
+    
+    <node name="rsbb_record_server" pkg="rsbb_record_server" type="rsbb_record_server" output="screen" respawn="true">
+      <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
+    </node>
+    
+    <node pkg="roah_rsbb" type="sounds" name="roah_rsbb_sounds" respawn="true">
+      <param name="bell_ring_command" type="string" value="mplayer $(find rsbb_etc)/audio/bell.mp3"/>
+      <param name="timeout_ring_command" type="string" value="mplayer $(find rsbb_etc)/audio/timeout.mp3"/>
+    </node>
+    
+    <!--
+    <include file="$(find roah_devices)/launch/run_real.launch">
+      <arg name="smartif_host" default="192.168.1.56"/>
+    </include>
+    -->
+    
+    <node pkg="roah_rsbb" type="core" name="roah_rsbb_core" respawn="true" output="screen">
+      <rosparam file="$(find rsbb_etc)/config/rsbb_refbox.yaml" command="load" />
+      <param name="benchmarks_file" type="string" value="$(find rsbb_etc)/config/benchmarks_description.yaml"/>
+      <param name="schedule_file" type="string" value="$(find rsbb_etc)/config/schedule.yaml"/>
+      <param name="passwords_file" type="string" value="$(find rsbb_etc)/config/passwords.yaml"/>
+      <param name="log_dir" type="string" value="$(find roah_rsbb)/log"/>
+    </node>
+    
+    <node pkg="roah_rsbb" type="shutdown_service" name="roah_rsbb_core_shutdown" required="true"/>
+    
+  </group>
   
-  <node pkg="roah_rsbb" type="core" name="roah_rsbb_core" respawn="true" output="screen">
-    <param name="rsbb_host" type="string" value="$(arg rsbb_host)"/>
-    <param name="rsbb_port" type="int" value="$(arg rsbb_port)"/>
-    <param name="benchmarks_file" type="string" value="$(arg benchmarks_file)"/>
-    <param name="schedule_file" type="string" value="$(arg schedule_file)"/>
-    <param name="passwords_file" type="string" value="$(arg passwords_file)"/>
-    <param name="log_dir" type="string" value="$(arg log_dir)"/>
-  </node>
-  
-  
-  <!--
-  <include file="$(find roah_devices)/launch/run_real.launch">
-    <arg name="smartif_host" value="$(arg smartif_host)"/>
-  </include>
-  -->
-  
-  <rosparam file="$(find rsbb_bmbox)/config/config.yaml" command="load" />
-  
-  <node name="rsbb_bmbox"
-    pkg="rsbb_bmbox"
-    type="benchmark_script_server.py"
-    output="screen"
-    respawn="true"
-  />
-  
-  <include file="$(find rsbb_record_server)/launch/record_server.launch"/>
-  
-  <node pkg="roah_rsbb" type="sounds" name="roah_rsbb_sounds" respawn="true">
-    <param name="bell_ring_command" type="string" value="$(arg bell_ring_command)"/>
-    <param name="timeout_ring_command" type="string" value="$(arg timeout_ring_command)"/>
-  </node>
-
-</group>
-
   <include file="$(find roah_rsbb)/launch/roah_rsbb_client.launch"/>
-
+  
 </launch>

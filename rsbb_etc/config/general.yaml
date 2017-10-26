@@ -1,3 +1,4 @@
+base_results_directory: "~/refbox_output/"
 base_record_directory: "~/refbox_output/"
 topics_list:
 - "topic1"

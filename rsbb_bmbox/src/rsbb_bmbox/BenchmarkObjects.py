@@ -529,7 +529,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		self.__result_filename = None
 		
 		try:
-			self.__result_base_path = rospy.get_param("base_results_directory")
+			self.__result_base_path = rospy.get_param("~base_results_directory")
 		except KeyError:
 			rospy.logerr("parameter base_results_directory not set in the configuration")
 			raise
@@ -592,7 +592,13 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		self.__result_object['benchmark_info']['end_time'] = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__write_result_file()
 		if not rospy.is_shutdown():
-			self.__result_publisher.publish(String(data = yaml.safe_dump(self.__result_object, default_flow_style=False)))
+			try:
+				self.__result_publisher.publish(String(data = yaml.safe_dump(self.__result_object, default_flow_style=False)))
+			except rospy.ROSException:
+				print "Couldn't publish result"
+	
+	
+	
 	
 	def __set_current_score(self, current_score):
 		self.__result_object['score'] = current_score
@@ -659,7 +665,7 @@ class GoalObject:
 		return self._timeout
 	
 	def has_been_completed(self):
-		return self._executed
+		return self._executed and not self._has_timed_out
 	
 	def has_timed_out(self):
 		return self._has_timed_out

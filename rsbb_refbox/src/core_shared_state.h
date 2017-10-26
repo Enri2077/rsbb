@@ -275,7 +275,8 @@ struct CoreSharedState: boost::noncopyable {
 	const Benchmarks benchmarks;
 	const Passwords passwords;
 	const string run_uuid;
-	map<string, pair<string, uint32_t>> benchmarking_robots;bool tablet_display_map;
+	map<string, pair<string, uint32_t>> benchmarking_robots;
+	bool tablet_display_map;
 	roah_devices::DevicesState::ConstPtr last_devices_state;
 	Time last_tablet_time;
 	std::shared_ptr<const roah_rsbb_msgs::TabletBeacon> last_tablet;

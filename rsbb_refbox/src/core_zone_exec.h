@@ -338,7 +338,7 @@ public:
 				ExecutingBenchmark(ss, event, end),
 				robot_name_(robot_name),
 				private_channel_(
-						new roah_rsbb::RosPrivateChannel(param_direct<string> ("~rsbb_host", "10.255.255.255"), ss_.private_port(), event_.password,
+						new roah_rsbb::RosPrivateChannel(param_direct<string> ("~rsbb_host", "10.123.255.255"), ss_.private_port(), event_.password,
 								param_direct<string> ("~rsbb_cypher", "aes-128-cbc"))),
 				state_timer_(ss_.nh.createTimer(Duration(0.2), &ExecutingSingleRobotBenchmark::transmit_state, this)), messages_saved_(0),
 				rcv_notifications_(log_, "/notification", display_online_data_), rcv_activation_event_(log_, "/command", display_online_data_),
