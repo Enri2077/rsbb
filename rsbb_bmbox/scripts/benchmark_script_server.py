@@ -31,6 +31,7 @@ class BenchmarkServer(object):
 		
 		self.import_benchmark_scripts()
 	
+	
 	def execute_benchmark_callback(self, request):
 		rospy.loginfo('execute_benchmark_callback: benchmark_code %s \t team: %s \t run: %i' % (request.benchmark_code, request.team, request.run))
 		

@@ -2,7 +2,7 @@
 
 <group ns="rsbb">
 
-		<rosparam file="$(find rsbb_bmbox)/config/config.yaml" command="load" />
+		<rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
 	
 		<node name="rsbb_bmbox"
 			pkg="rsbb_bmbox"

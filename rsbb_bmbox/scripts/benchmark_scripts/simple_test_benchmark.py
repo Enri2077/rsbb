@@ -24,6 +24,8 @@ class BenchmarkObject (BaseBenchmarkObject):
 		execution_time = rospy.Duration(0.0)
 		
 		
+		print "params:\n", self.params
+				
 		##########################################
 		#            MANUAL OPERATION            #
 		##########################################

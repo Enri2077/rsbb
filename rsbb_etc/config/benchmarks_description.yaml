@@ -1,3 +1,4 @@
+benchmarks_description:
 - name: RoCKIn@Home Task Benchmark 1
   desc: Getting to know my home
   code: HGTKMH
@@ -15,6 +16,7 @@
     - Disqualifying Behaviors:
       - { type: uint, desc: "The robot hits Annie or another person in the environment." }
       - { type: uint, desc: "The robot damages the test bed." }
+  
 - name: RoCKIn@Home Task Benchmark 2
   desc: Welcoming visitors
   code: HWV
@@ -39,6 +41,7 @@
     - Disqualifying Behaviors:
       - { type: uint, desc: "The robot hits Annie or one of the visitors." }
       - { type: uint, desc: "The robot damages the test bed. " }
+  
 - name: RoCKIn@Home Task Benchmark 3
   desc: Catering for Granny Annie's Comfort
   code: HCFGAC
@@ -58,27 +61,52 @@
       - { type: uint, desc: "The robot hits Annie or another person in the environment." }
       - { type: uint, desc: "The robot damages or destroys the objects requested to manipulate." }
       - { type: uint, desc: "The robot damages the test bed." }
+  
 - name: RoCKIn@Home Functionality Benchmark 1
   prefix: fbm1h
   desc: Object Perception Functionality
   code: HOPF
   timeout: 600.000
   total_timeout: 600.000
+  record_topics:
+    - /bmbox/table_origin/pose
+    - /bmbox/table_origin/pose2d
+    - /bmbox/positioner_origin/pose
+    - /bmbox/positioner_origin/pose2d
+  
 - name: RoCKIn@Home Functionality Benchmark 2
   prefix: fbm2h
   desc: Navigation Functionality
   code: HNF
   timeout: 90.0 #120.0
   total_timeout: 3600.0
+  record_topics:
+    - /bmbox/robot/pose
+    - /bmbox/robot/pose2d
+  
 - name: RoCKIn@Home Functionality Benchmark 3
   prefix: fbm3h
   desc: Speech Understanding Functionality
   code: HSUF
   timeout: 120.000
+  
 - name: Simple Test Benchmark 
   prefix: stb
   desc: Simple Test Benchmark
   code: STB
   timeout: 30.000
   total_timeout: 200.0
+  scoring:
+    - Penalized Behaviors:
+      - { type: uint, desc: "The robot bumps into the furniture or people." }
+    - Disqualifying Behaviors:
+      - { type: uint, desc: "The robot hits people or the furniture." }
+      - { type: uint, desc: "The robot damages the test bed." }
+  record_topics:
+    - /bmbox/robot/pose
+    - /bmbox/robot/pose2d
+
+
+
+
 

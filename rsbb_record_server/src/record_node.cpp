@@ -258,14 +258,14 @@ int main(int argc, char** argv) {
 	current_record_request_.run = 0;
 
 	// get the parameters
-	if (!pnh.getParam("topics_list", topics_list)) {
+	if (!pnh.getParam("general_record_list", topics_list)) {
 		ROS_ERROR_STREAM("param topics_list not found or not a list of strings");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
 	}
 	if (topics_list.empty()) {
-		ROS_ERROR_STREAM("param topics_list can not be empty");
+		ROS_ERROR_STREAM("param general_record_list can not be empty");
 		current_system_status_.status = SystemStatus::ERROR;
 		publish_system_status("restarting");
 		restart_node();
@@ -353,6 +353,11 @@ int main(int argc, char** argv) {
 	// bag filename prefix and path with the bag's filename prefix
 	fs::path bag_filename_prefix(trim(string("run_") + to_string(current_record_request_.run)));
 	fs::path bag_filename_prefixed_path = bag_path / bag_filename_prefix;
+
+	// fill the topics list with the topics in the record request
+	for(string t: current_record_request_.topics){
+		topics_list.push_back(t);
+	}
 
 	// set the options for the recorder
 	rosbag::RecorderOptions options;

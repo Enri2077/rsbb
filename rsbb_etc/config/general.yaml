@@ -1,8 +1,13 @@
 base_results_directory: "~/refbox_output/"
 base_record_directory: "~/refbox_output/"
-topics_list:
-- "topic1"
-- "topic2"
-- "/test1"
-- "/test_hello/world"
-- "/hi"
+general_record_list:
+  - /tf
+  - /rosout
+  - /bmbox/map
+  - /bmbox/map_metadata
+  - /bmbox/bmbox_state
+  - /bmbox/refbox_state
+  - /bmbox/current_result
+  - /bmbox/benchmark_configuration
+  - /core/to_gui
+

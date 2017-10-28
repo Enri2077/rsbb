@@ -268,7 +268,7 @@ class RefBoxComm:
 				
 		
 		except rospy.ServiceException, e:
-			rospy.logerr("Service call failed: %s"%e)
+			rospy.logerr("Service call failed: %s" % (e))
 		
 		### normal post conditions:
 		self.__fsm.update(BmBoxState.READY)
@@ -321,7 +321,7 @@ class RefBoxComm:
 				rospy.logerr("request_goal: Goal request FAILED (refbox refused to execute the goal)")
 				
 		except rospy.ServiceException, e:
-			rospy.logerr("request_goal: Service call failed: %s"%e)
+			rospy.logerr("request_goal: Service call failed: %s" % (e))
 		
 		
 		### normal post conditions:
@@ -384,7 +384,7 @@ class RefBoxComm:
 				rospy.logerr("end_benchmark: request FAILED (refbox refused to end the benchmark)")
 		
 		except rospy.ServiceException, e:
-			rospy.logerr("Service call failed: %s"%e)
+			rospy.logerr("Service call failed: %s" % (e))
 		
 		
 		### normal post conditions:
@@ -497,19 +497,19 @@ def check_and_make_dir(p):
 				return True
 			elif path.isfile(p):
 				
-				rospy.logwarn("Renaming file [%s] to create directory"%(p))
+				rospy.logwarn("Renaming file [%s] to create directory" % (p))
 				rename(p, p + "_renamed_file")
 				
 				try:
 					makedirs(p)
 				except OSError as e:
-					rospy.logerr("Directory [%s] could not be created. Please, manually create the directory."%(p))
+					rospy.logerr("Directory [%s] could not be created. Please, manually create the directory." % (p))
 					raise
 				
 				return True
 				
 			else:
-				rospy.logerr("Directory [%s] could not be created. Please, manually create the directory."%(p))
+				rospy.logerr("Directory [%s] could not be created. Please, manually create the directory." % (p))
 				raise
 	
 	return True
@@ -524,9 +524,37 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		self.__result_publisher = rospy.Publisher("current_benchmark_result", String, queue_size=10, latch=True)
 		
 		self.__result_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined", 'end_description': "undefined"}, 'score': {}}
+		self.__benchmark_config_object = None
 		
 		self.__result_base_path = None
 		self.__result_filename = None
+		
+		
+		try:
+			benchmark_configs_directory = rospy.get_param("~benchmark_configs_directory")
+			print "\n\n\n\nbenchmark_configs_directory:", benchmark_configs_directory, "\n\n\n\n"
+			
+			benchmark_configs_path = path.normpath(path.expanduser(benchmark_configs_directory))
+			
+			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
+			print "\n\n\n\nbenchmark_config_path:", benchmark_config_path, "\n\n\n\n"
+
+			try:
+				with open(benchmark_config_path, 'r') as benchmark_config_file:
+					try:
+						self.__benchmark_config_object = yaml.load(benchmark_config_file)
+					except yaml.YAMLError as e:
+						rospy.logerr("Raised YAML exception while loading benchmark script [%s]. Configuration file [%s] not valid.\n%s" % (self.get_benchmark_code(), benchmark_config_path, e))
+				
+			except IOError:
+				rospy.loginfo("No configuration file [%s] found for benchmark script [%s]" % (benchmark_config_path, self.get_benchmark_code()))
+				
+					
+			
+		except KeyError:
+			rospy.logerr("parameter benchmark_configs_directory not set in the configuration")
+			raise
+	
 		
 		try:
 			self.__result_base_path = rospy.get_param("~base_results_directory")
@@ -547,6 +575,20 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	def score(self):
 		rospy.logerr("it is not allowed to delete the score object")
 	
+	@property
+	def params(self):
+		"""params property."""
+		return self.__benchmark_config_object
+	
+	@params.setter
+	def params(self, value):
+		rospy.logwarn("params object should not be modified")
+		self.__benchmark_config_object = value
+	
+	@params.deleter
+	def params(self):
+		rospy.logerr("it is not allowed to delete the params object")
+	
 	def __write_result_file(self):
 				
 		### Create directories and initialise the score file with the benchmark info
@@ -556,7 +598,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		
 		# check base path
 		if not is_valid_dir_path(base_path):
-			rospy.logerr("Base directory [%s] does not exist. Please create the directory or update the base_directory parameter with the directory where the score should be saved"%(base_path))
+			rospy.logerr("Base directory [%s] does not exist. Please create the directory or update the base_directory parameter with the directory where the score should be saved" % (base_path))
 			raise Exception
 		
 		# result directory and path

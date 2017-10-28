@@ -604,6 +604,7 @@ public:
 		record_request_.team = event_.team;
 		record_request_.robot = "";
 		record_request_.run = event_.run;
+		record_request_.topics = event_.benchmark.record_topics;
 		record_request_publisher_.publish(record_request_);
 
 	}

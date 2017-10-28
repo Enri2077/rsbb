@@ -152,6 +152,7 @@ struct Benchmark {
 	string code;
 	Duration timeout;
 	Duration total_timeout;
+	vector<string> record_topics;
 	vector<ScoringItem> scoring;
 };
 
@@ -163,11 +164,15 @@ public:
 		using namespace YAML;
 
 		Node file = LoadFile(param_direct<string>("~benchmarks_file", "benchmarks.yaml"));
-		if (!file.IsSequence()) {
+
+		Node benchmarks_description_node = file["benchmarks_description"];
+
+		if (!benchmarks_description_node || !benchmarks_description_node.IsSequence()) {
 			ROS_FATAL_STREAM("Benchmarks file is not a sequence!");
 			abort_rsbb();
 		}
-		for (Node const& benchmark_node : file) {
+
+		for (Node const& benchmark_node : benchmarks_description_node) {
 			if (!benchmark_node.IsMap()) {
 				ROS_FATAL_STREAM("Benchmarks file has a benchmark entry that is not a map!");
 				abort_rsbb();
@@ -184,6 +189,10 @@ public:
 				ROS_FATAL_STREAM("Benchmarks file is missing a \"code\" entry!");
 				abort_rsbb();
 			}
+			if (benchmark_node["record_topics"] && !benchmark_node["record_topics"].IsSequence()) {
+				ROS_FATAL_STREAM("Benchmarks file contains a \"record_topics\" entry, but it is not a sequence!");
+				abort_rsbb();
+			}
 			if (!benchmark_node["timeout"]) {
 				ROS_FATAL_STREAM("Benchmarks file is missing a \"timeout\" entry!");
 				abort_rsbb();
@@ -193,6 +202,12 @@ public:
 			b.desc = benchmark_node["desc"].as<string>();
 			b.code = benchmark_node["code"].as<string>();
 			b.timeout = Duration(benchmark_node["timeout"].as<double>());
+
+			if(benchmark_node["record_topics"]){
+				for (Node const& topic_node : benchmark_node["record_topics"]) {
+					b.record_topics.push_back(topic_node.as<string>());
+				}
+			}
 
 			if (benchmark_node["prefix"])
 				b.prefix = benchmark_node["prefix"].as<string>();
