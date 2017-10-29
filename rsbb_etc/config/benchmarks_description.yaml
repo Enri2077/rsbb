@@ -1,7 +1,7 @@
 benchmarks_description:
 - name: RoCKIn@Home Task Benchmark 1
+  code: HGTKMH 
   desc: Getting to know my home
-  code: HGTKMH
   timeout: 600.000
   scoring:
     - Achievements:
@@ -18,8 +18,8 @@ benchmarks_description:
       - { type: uint, desc: "The robot damages the test bed." }
   
 - name: RoCKIn@Home Task Benchmark 2
-  desc: Welcoming visitors
   code: HWV
+  desc: Welcoming visitors
   timeout: 600.000
   scoring:
     - Achievements:
@@ -43,8 +43,8 @@ benchmarks_description:
       - { type: uint, desc: "The robot damages the test bed. " }
   
 - name: RoCKIn@Home Task Benchmark 3
-  desc: Catering for Granny Annie's Comfort
   code: HCFGAC
+  desc: Catering for Granny Annie's Comfort
   timeout: 600.000
   scoring:
     - Achievements:
@@ -63,9 +63,9 @@ benchmarks_description:
       - { type: uint, desc: "The robot damages the test bed." }
   
 - name: RoCKIn@Home Functionality Benchmark 1
+  code: HOPF
   prefix: fbm1h
   desc: Object Perception Functionality
-  code: HOPF
   timeout: 600.000
   total_timeout: 600.000
   record_topics:
@@ -75,25 +75,28 @@ benchmarks_description:
     - /bmbox/positioner_origin/pose2d
   
 - name: RoCKIn@Home Functionality Benchmark 2
-  prefix: fbm2h
-  desc: Navigation Functionality
   code: HNF
+  desc: Navigation Functionality
+  prefix: fbm2h
   timeout: 90.0 #120.0
   total_timeout: 3600.0
   record_topics:
     - /bmbox/robot/pose
     - /bmbox/robot/pose2d
+    - /bmbox/actor/pose
+    - /bmbox/actor/pose2d
+
   
 - name: RoCKIn@Home Functionality Benchmark 3
+  code: HSUF
   prefix: fbm3h
   desc: Speech Understanding Functionality
-  code: HSUF
   timeout: 120.000
   
 - name: Simple Test Benchmark 
+  code: STB
   prefix: stb
   desc: Simple Test Benchmark
-  code: STB
   timeout: 30.000
   total_timeout: 200.0
   scoring:
@@ -103,8 +106,8 @@ benchmarks_description:
       - { type: uint, desc: "The robot hits people or the furniture." }
       - { type: uint, desc: "The robot damages the test bed." }
   record_topics:
-    - /bmbox/robot/pose
-    - /bmbox/robot/pose2d
+    - /bmbox/actor/pose
+    - /bmbox/actor/pose2d
 
 
 

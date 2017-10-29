@@ -64,6 +64,7 @@ class RefBoxComm:
 		
 		self.__current_goal = None
 		self.__current_manual_operation = None
+		self.__current_referee_score = None
 		
 		self.__fsm = FSM(
 			bmbox_state_to_str,
@@ -100,6 +101,7 @@ class RefBoxComm:
 		self._manual_operation_complete_server = rospy.Service("bmbox/manual_operation_complete", ManualOperationComplete, self.__manual_operation_complete_callback)
 		self._goal_started_server = rospy.Service("bmbox/goal_execution_started", GoalStarted, self.__goal_started_callback)
 		self._goal_complete_server = rospy.Service("bmbox/goal_complete", GoalComplete, self.__goal_complete_callback)
+		self._goal_complete_server = rospy.Service("bmbox/referee_score", RefereeScore, self.__referee_score_callback)
 		self._stop_benchmark_server = rospy.Service("bmbox/stop_benchmark", StopBenchmark, self.__stop_benchmark_callback)
 		
 		
@@ -181,6 +183,25 @@ class RefBoxComm:
 		
 		return GoalCompleteResponse(True)
 	
+	def __referee_score_callback(self, request):
+		
+		### TEST
+#		if self.tmp < 5 and request.refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT:
+#			self.tmp += 1
+#			print "TEST __referee_score_callback: return RefereeScoreResponse(False)"
+#			return RefereeScoreResponse(False)
+		
+#		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT], log_function = rospy.logerr):
+#			rospy.logwarn("goal_complete_callback: inconsistent states or benchmark not running")
+		
+		try:
+			self.__current_referee_score = yaml.load(request.score)
+		except yaml.YAMLError as e:
+			rospy.logerr("referee_score_callback: YAMLError while parsing refere score yaml string\n%s"%e)
+		
+		print "referee_score_callback:\n", self.__current_referee_score
+		
+		return RefereeScoreResponse(True)
 	
 	def __manual_operation_complete_callback(self, request):
 		
@@ -461,6 +482,8 @@ class RefBoxComm:
 	def can_terminate_benchmark(self):
 		return not self.is_benchmark_running() or self.__is_waiting_to_start()
 	
+	def get_referee_score(self):
+		return self.__current_referee_score
 
 
 
@@ -523,7 +546,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		
 		self.__result_publisher = rospy.Publisher("current_benchmark_result", String, queue_size=10, latch=True)
 		
-		self.__result_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined", 'end_description': "undefined"}, 'score': {}}
+		self.__result_object = {'benchmark_info': {'team': "undefined", 'run': 0, 'benchmark_code': "undefined", 'end_description': "undefined", 'params':"undefined"}, 'score': {}}
 		self.__benchmark_config_object = None
 		
 		self.__result_base_path = None
@@ -538,11 +561,14 @@ class BaseBenchmarkObject (RefBoxComm, object):
 			
 			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
 			print "\n\n\n\nbenchmark_config_path:", benchmark_config_path, "\n\n\n\n"
-
+			
+			self.__result_object['benchmark_info']['params'] = "None"
+			
 			try:
 				with open(benchmark_config_path, 'r') as benchmark_config_file:
 					try:
 						self.__benchmark_config_object = yaml.load(benchmark_config_file)
+						self.__result_object['benchmark_info']['params'] = self.__benchmark_config_object
 					except yaml.YAMLError as e:
 						rospy.logerr("Raised YAML exception while loading benchmark script [%s]. Configuration file [%s] not valid.\n%s" % (self.get_benchmark_code(), benchmark_config_path, e))
 				
@@ -562,6 +588,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 			rospy.logerr("parameter base_results_directory not set in the configuration")
 			raise
 	
+	
 	@property
 	def score(self):
 		"""score property."""
@@ -574,6 +601,21 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	@score.deleter
 	def score(self):
 		rospy.logerr("it is not allowed to delete the score object")
+	
+	
+	@property
+	def referee_score(self):
+		"""referee score property."""
+		return self.get_referee_score()
+	
+	@referee_score.setter
+	def referee_score(self, value):
+		rospy.logerr("it is not allowed to modify the referee score object")
+	
+	@referee_score.deleter
+	def referee_score(self):
+		rospy.logerr("it is not allowed to delete the referee score object")
+	
 	
 	@property
 	def params(self):
@@ -588,6 +630,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	@params.deleter
 	def params(self):
 		rospy.logerr("it is not allowed to delete the params object")
+	
 	
 	def __write_result_file(self):
 				
@@ -632,6 +675,7 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	def save_and_publish_score(self):
 		self.__result_object['benchmark_info']['end_description'] = self.get_end_description()
 		self.__result_object['benchmark_info']['end_time'] = datetime.now(tzlocal()).strftime(self.__date_string_format)
+		self.__result_object['referee_score'] = self.get_referee_score()
 		self.__write_result_file()
 		if not rospy.is_shutdown():
 			try:

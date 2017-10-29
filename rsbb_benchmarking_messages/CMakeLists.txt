@@ -29,6 +29,7 @@ add_service_files(
   ExecuteGoal.srv
   GoalStarted.srv
   GoalComplete.srv
+  RefereeScore.srv
   EndBenchmark.srv
   StopBenchmark.srv
   StopRecordRequest.srv

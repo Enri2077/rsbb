@@ -143,7 +143,7 @@ public:
 
 	}
 
-	void set_score(roah_rsbb::Score const& score) {
+	virtual void set_score(roah_rsbb::Score const& score) {
 		Time now = Time::now();
 
 		for (ScoringItem& i : scoring_) {
@@ -520,7 +520,7 @@ class ExecutingExternallyControlledBenchmark: public ExecutingSingleRobotBenchma
 	ServiceClient init_benchmark_service_, terminate_benchmark_service_;
 
 	// Outgoing script services
-	ServiceClient start_benchmark_service_, manual_operation_complete_service_, goal_execution_started_service_, goal_complete_service_, stop_benchmark_service_;
+	ServiceClient start_benchmark_service_, manual_operation_complete_service_, goal_execution_started_service_, goal_complete_service_, referee_score_service_, stop_benchmark_service_;
 
 	// Outgoing record server services and topics
 	ServiceClient stop_record_service_client_;
@@ -568,6 +568,7 @@ public:
 		manual_operation_complete_service_(ss_.nh.serviceClient<ManualOperationComplete>("bmbox/manual_operation_complete")),
 		goal_execution_started_service_(ss_.nh.serviceClient<GoalStarted>("bmbox/goal_execution_started")),
 		goal_complete_service_(ss_.nh.serviceClient<GoalComplete>("bmbox/goal_complete")),
+		referee_score_service_(ss_.nh.serviceClient<RefereeScore>("bmbox/referee_score")),
 		stop_benchmark_service_(ss_.nh.serviceClient<StopBenchmark>("bmbox/stop_benchmark")),
 
 		stop_record_service_client_(ss_.nh.serviceClient<StopRecordRequestRequest>("record_server/stop_record_request")),
@@ -704,17 +705,10 @@ public:
 		set_goal_execution_state(RefBoxState::READY);
 		set_manual_operation_state(RefBoxState::READY);
 
+		send_referee_score();
 
 		StartBenchmark start_benchmark;
 		start_benchmark.request.refbox_state = refbox_state_;
-
-//		if (start_benchmark_service_.call(start_benchmark)){
-//			ROS_INFO("Called bmbox/start_benchmark service");
-//			if(!start_benchmark.response.result) ROS_ERROR("benchmark script server refused to start benchmark");
-//		}else{
-//			ROS_ERROR("Failed to call bmbox/start_benchmark service");
-//		}
-
 
 		// if the service call fails in any way, abort the benchmark
 		if (start_benchmark_service_.call(start_benchmark) && start_benchmark.response.result){
@@ -894,6 +888,29 @@ public:
 			zone.scoring.back().descriptions.push_back (i.desc);
 			zone.scoring.back().current_values.push_back (i.current_value);
 		}
+	}
+
+	void send_referee_score(){
+
+		YAML::Node scoring_node;
+		for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());
+
+		cout << "scoring_node: " << scoring_node << endl;
+
+		cout << "scoring_node.IsSequence: " << scoring_node.IsSequence() << endl;
+		YAML::Emitter scoring_node_os;
+		scoring_node_os << scoring_node;
+
+		RefereeScore referee_score;
+		referee_score.request.score = scoring_node_os.c_str();//.as<string>();
+		referee_score.request.refbox_state = refbox_state_;
+
+		if (referee_score_service_.call(referee_score) && referee_score.response.success){
+			ROS_INFO("Called referee_score service");
+		} else {
+			ROS_INFO("Tried to call referee_score service but not available or bmbox refused to receive referee score");
+		}
+
 	}
 
 	void fill_2(Time const& now, roah_rsbb::ZoneState& zone){}
@@ -1151,6 +1168,26 @@ public:
 
 	}
 
+	void set_score(roah_rsbb::Score const& score) {
+		Time now = Time::now();
+		bool group_found = false;
+
+		for (ScoringItem& i : scoring_) {
+			if ( (score.group == i.group) && (score.desc == i.desc)) {
+				i.current_value = score.value;
+				log_.log_score ("/rsbb_log/score", now, score);
+
+				group_found = true;
+				break;
+			}
+		}
+
+		send_referee_score();
+
+		if(!group_found) ROS_ERROR_STREAM("Did not find group " << score.group << " desc " << score.desc);
+		return;
+
+	}
 
 
 	/*************************************************

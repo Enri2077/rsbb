@@ -143,6 +143,18 @@ struct ScoringItem {
 		}
 		desc = item_node["desc"].as<string>();
 	}
+
+	YAML::Node to_yaml_node(){
+		using namespace YAML;
+
+		YAML::Node item_node;
+		item_node["group_name"] = group;
+		item_node["desc"] = desc;
+		item_node["current_value"] = current_value;
+		item_node["type"] = type==SCORING_BOOL ? "bool" : "uint";
+
+		return item_node;
+	}
 };
 
 struct Benchmark {

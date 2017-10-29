@@ -1,44 +1,25 @@
 rigid_bodies:
-#  '1':
-#    pose: origin/pose
-#    pose2d: origin/pose2d
-#    child_frame_id: origin
-#    parent_frame_id: world
+  '1':
+    pose: robot/pose
+    pose2d: robot/pose2d
+    child_frame_id: robot
+    parent_frame_id: world
     
-#  '2':
-#    pose: ref_board/pose
-#    pose2d: ref_board/pose2d
-#    child_frame_id: ref_board
-#    parent_frame_id: world
+  '2':
+    pose: table_origin/pose
+    pose2d: table_origin/pose2d
+    child_frame_id: table_origin
+    parent_frame_id: world
     
   '3':
-    pose: robot_at_home/pose
-    pose2d: robot_at_home/pose2d
-    child_frame_id: robot_at_home
-    parent_frame_id: world
-    
-#  '4':
-#    pose: robot/pose
-#    pose2d: robot/pose2d
-#    child_frame_id: robot_at_work
-#    parent_frame_id: world
-    
-#  '5':
-#    pose: robot_at_work/pose
-#    pose2d: robot_at_work/pose2d
-#    child_frame_id: robot_at_work
-#    parent_frame_id: world
-    
-  '6':
-    pose: origin/pose
-    pose2d: origin/pose2d
-    child_frame_id: origin
-    parent_frame_id: world
-    
-  '7':
-    pose: ref_board/pose
+    pose: positioner_origin/pose
     pose2d: ref_board/pose2d
-    child_frame_id: ref_board
+    child_frame_id: positioner_origin
     parent_frame_id: world
 
-# the commented ones are work's markersets. Here there should be all and only the home's ones.
+  '4':
+    pose: actor/pose
+    pose2d: actor/pose2d
+    child_frame_id: actor
+    parent_frame_id: world
+

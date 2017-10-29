@@ -26,6 +26,8 @@ class BenchmarkObject (BaseBenchmarkObject):
 		
 		print "params:\n", self.params
 				
+		print "referee_score:\n", self.referee_score
+		
 		##########################################
 		#            MANUAL OPERATION            #
 		##########################################
