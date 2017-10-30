@@ -895,9 +895,6 @@ public:
 		YAML::Node scoring_node;
 		for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());
 
-		cout << "scoring_node: " << scoring_node << endl;
-
-		cout << "scoring_node.IsSequence: " << scoring_node.IsSequence() << endl;
 		YAML::Emitter scoring_node_os;
 		scoring_node_os << scoring_node;
 
@@ -1045,7 +1042,6 @@ public:
 
 	void terminate_benchmark() {
 		timeout_timer_.stop_pause(Time());
-		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
 
 		if(refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK){
 			set_benchmark_state(RefBoxState::STOP);
@@ -1492,12 +1488,6 @@ public:
 
 	void printStates(){
 
-//		cout << "printStates: isServerConnected(): " << benchmark_action_client_.isServerConnected() << endl;
-//
-//		actionlib::SimpleClientGoalState state = benchmark_action_client_.getState();
-//	    cout << "printStates: action state: " << state.toString() << endl;
-
-
 		if(printStates_last_last_bmbox_state_ == last_bmbox_state_->state
 		&& printStates_last_benchmark_phase_ == refbox_state_.benchmark_state
 		&& printStates_last_goal_execution_state_ == refbox_state_.goal_execution_state
@@ -1599,20 +1589,6 @@ public:
 		}
 
 		cout << endl;
-
-	}
-
-
-private:
-	string bmbox_prefix(Event const& event) {
-
-		if(event.benchmark.prefix.length()){
-			return "/" + event.benchmark.prefix + "/";
-		} else {
-			ROS_FATAL_STREAM("Cannot execute benchmark of type " << event.benchmark_code << "(" << event.benchmark.desc << ") with ExecutingExternallyControlledBenchmark");
-			terminate_benchmark();
-			return "/";
-		}
 
 	}
 

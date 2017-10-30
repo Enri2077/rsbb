@@ -144,24 +144,26 @@ struct ScoringItem {
 		desc = item_node["desc"].as<string>();
 	}
 
-	YAML::Node to_yaml_node(){
+	YAML::Node to_yaml_node() {
 		using namespace YAML;
 
 		YAML::Node item_node;
 		item_node["group_name"] = group;
 		item_node["desc"] = desc;
 		item_node["current_value"] = current_value;
-		item_node["type"] = type==SCORING_BOOL ? "bool" : "uint";
+		item_node["type"] = type == SCORING_BOOL ? "bool" : "uint";
 
 		return item_node;
 	}
 };
 
 struct Benchmark {
-	string name;
-	string prefix;
-	string desc;
 	string code;
+	string desc;
+	string name;
+	int order;
+	bool scripted;
+	bool multiple_robots;
 	Duration timeout;
 	Duration total_timeout;
 	vector<string> record_topics;
@@ -170,6 +172,7 @@ struct Benchmark {
 
 class Benchmarks {
 	map<string, Benchmark> by_code_;
+	map<int, string> codes_by_order_;
 
 public:
 	Benchmarks() {
@@ -180,84 +183,125 @@ public:
 		Node benchmarks_description_node = file["benchmarks_description"];
 
 		if (!benchmarks_description_node || !benchmarks_description_node.IsSequence()) {
-			ROS_FATAL_STREAM("Benchmarks file is not a sequence!");
+			ROS_FATAL_STREAM("In the benchmarks description file, benchmarks_description should be the root entry and should be a sequence of benchmark entries");
 			abort_rsbb();
 		}
 
 		for (Node const& benchmark_node : benchmarks_description_node) {
 			if (!benchmark_node.IsMap()) {
-				ROS_FATAL_STREAM("Benchmarks file has a benchmark entry that is not a map!");
-				abort_rsbb();
-			}
-			if (!benchmark_node["name"]) {
-				ROS_FATAL_STREAM("Benchmarks file is missing a \"node\" entry!");
-				abort_rsbb();
-			}
-			if (!benchmark_node["desc"]) {
-				ROS_FATAL_STREAM("Benchmarks file is missing a \"desc\" entry!");
+				ROS_FATAL_STREAM("In the benchmarks description file, a benchmark entry is not a map");
 				abort_rsbb();
 			}
 			if (!benchmark_node["code"]) {
-				ROS_FATAL_STREAM("Benchmarks file is missing a \"code\" entry!");
+				ROS_FATAL_STREAM("In benchmarks_description, a \"code\" [string] entry is missing");
+				abort_rsbb();
+			}
+			if (!benchmark_node["order"]) {
+				ROS_FATAL_STREAM("In benchmarks_description, \"order\" is missing for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"order\" [int] entry should be specified.");
+				abort_rsbb();
+			}
+			if (!benchmark_node["desc"]) {
+				ROS_FATAL_STREAM("Benchmarks file is missing a \"desc\" entry for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"desc\" [string] entry should be specified");
+				abort_rsbb();
+			}
+			if (!benchmark_node["scripted"]) {
+				ROS_FATAL_STREAM("In benchmarks_description, \"scripted\" is missing for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"scripted\" [bool] entry should be specified.");
+				abort_rsbb();
+			}
+			if (!benchmark_node["multiple_robots"]) {
+				ROS_FATAL_STREAM("In benchmarks_description, \"multiple_robots\" is missing for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"multiple_robots\" [bool] entry should be specified.");
 				abort_rsbb();
 			}
 			if (benchmark_node["record_topics"] && !benchmark_node["record_topics"].IsSequence()) {
-				ROS_FATAL_STREAM("Benchmarks file contains a \"record_topics\" entry, but it is not a sequence!");
+				ROS_FATAL_STREAM("In benchmarks_description, \"record_topics\" is not a sequence for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, the \"record_topics\" entry should be a sequence");
 				abort_rsbb();
 			}
-			if (!benchmark_node["timeout"]) {
-				ROS_FATAL_STREAM("Benchmarks file is missing a \"timeout\" entry!");
-				abort_rsbb();
-			}
-			Benchmark b;
-			b.name = benchmark_node["name"].as<string>();
-			b.desc = benchmark_node["desc"].as<string>();
-			b.code = benchmark_node["code"].as<string>();
-			b.timeout = Duration(benchmark_node["timeout"].as<double>());
+			if (benchmark_node["timeout"]){
 
-			if(benchmark_node["record_topics"]){
+				if(benchmark_node["global_timeout"] || benchmark_node["default_goal_timeout"]){
+					ROS_FATAL_STREAM("In benchmarks_description, both \"timeout\" and \"global_timeout\" or \"default_goal_timeout\" are present for benchmark [" << benchmark_node["code"] << "]");
+					ROS_FATAL_STREAM("In benchmarks_description, for each benchmark either \"timeout\" (when scripted = false) or both \"global_timeout\" and \"default_goal_timeout\" (when scripted = true) entries should be specified");
+					abort_rsbb();
+				}
+
+			}else{
+				if(!benchmark_node["global_timeout"] || !benchmark_node["default_goal_timeout"]){
+					ROS_FATAL_STREAM("In benchmarks_description, nor \"timeout\" nor \"global_timeout\" and \"default_goal_timeout\" are present for benchmark [" << benchmark_node["code"] << "]");
+					ROS_FATAL_STREAM("In benchmarks_description, for each benchmark either \"timeout\" (when scripted = false) or both \"global_timeout\" and \"default_goal_timeout\" (when scripted = true) entries should be specified");
+					abort_rsbb();
+				}
+			}
+
+			Benchmark b;
+			b.code = benchmark_node["code"].as<string>();
+			b.order = benchmark_node["order"].as<int>();
+			b.name = b.code; //benchmark_node["name"].as<string>();
+			b.desc = benchmark_node["desc"].as<string>();
+			b.scripted = benchmark_node["scripted"].as<bool>();
+			b.multiple_robots = benchmark_node["multiple_robots"].as<bool>();
+
+			if(benchmark_node["timeout"]){
+				b.timeout = Duration(benchmark_node["timeout"].as<double>());
+				b.total_timeout = b.timeout;
+			}else{
+				b.timeout = Duration(benchmark_node["default_goal_timeout"].as<double>());
+				b.total_timeout = Duration(benchmark_node["global_timeout"].as<double>());
+			}
+
+			if (benchmark_node["scoring"]) {
+
+				if (!benchmark_node["scoring"].IsSequence()) {
+					ROS_FATAL_STREAM("In benchmarks_description, the \"scoring\" entry is not a sequence for benchmark [" << benchmark_node["code"] << "]");
+					abort_rsbb();
+				}
+
+				for (Node const& scoring_node : benchmark_node["scoring"]) {
+
+					if (!scoring_node.IsMap()) {
+						ROS_FATAL_STREAM("In benchmarks_description, the \"scoring\" entry is not a sequence of maps for benchmark [" << benchmark_node["code"] << "]");
+						abort_rsbb();
+					}
+
+					for (YAML::const_iterator it = scoring_node.begin(); it != scoring_node.end(); ++it) {
+
+						string group_name = it->first.as<string>();
+
+						if (!it->second.IsSequence()) {
+							ROS_FATAL_STREAM("In benchmarks_description, the \"scoring \\ " << it->first << "\" entry is not a sequence of maps for benchmark [" << benchmark_node["code"] << "]");
+							abort_rsbb();
+						}
+
+						for (Node const& item_node : it->second) {
+							b.scoring.push_back(ScoringItem(b.name, group_name, item_node));
+						}
+
+					}
+				}
+			}
+
+			if (benchmark_node["record_topics"]) {
 				for (Node const& topic_node : benchmark_node["record_topics"]) {
 					b.record_topics.push_back(topic_node.as<string>());
 				}
 			}
 
-			if (benchmark_node["prefix"])
-				b.prefix = benchmark_node["prefix"].as<string>();
-
-			if (benchmark_node["total_timeout"]) {
-				b.total_timeout = Duration(benchmark_node["total_timeout"].as<double>());
-			} else {
-				b.total_timeout = b.timeout;
+			if(codes_by_order_.find(b.order) != codes_by_order_.end()){
+				ROS_FATAL_STREAM("In benchmarks_description, duplicated \"order\" entries are present");
+				abort_rsbb();
 			}
 
-			if (benchmark_node["scoring"]) {
-				if (!benchmark_node["scoring"].IsSequence()) {
-					ROS_FATAL_STREAM("Benchmark \"" << b.name << "\" \"scoring\" entry is not a sequence! :\n" << benchmark_node["scoring"]);
-					abort_rsbb();
-				}
-				for (Node const& scoring_node : benchmark_node["scoring"]) {
-					if (!scoring_node.IsMap()) {
-						ROS_FATAL_STREAM("Benchmark \"" << b.name << "\" \"scoring\" entry is not a sequence of maps! :\n" << scoring_node);
-						abort_rsbb();
-					}
-					for (YAML::const_iterator it = scoring_node.begin(); it != scoring_node.end(); ++it) {
-						string group_name = it->first.as<string>();
-						if (!it->second.IsSequence()) {
-							ROS_FATAL_STREAM("Benchmark \"" << b.name << "\" scoring \"" << it->first << "\" is not a sequence! :\n" << it->second);
-							abort_rsbb();
-						}
-						for (Node const& item_node : it->second) {
-							b.scoring.push_back(ScoringItem(b.name, group_name, item_node));
-						}
-					}
-				}
-			}
+			codes_by_order_[b.order] = b.code;
 			by_code_[b.code] = b;
+
 		}
 	}
 
-	Benchmark const&
-	get(string const& code) const {
+	Benchmark const& get(string const& code) const {
 		auto b = by_code_.find(code);
 		if (b == by_code_.end()) {
 			ROS_FATAL_STREAM("Could not find benchmark with code \"" << code << "\"");
@@ -265,6 +309,17 @@ public:
 		}
 		return b->second;
 	}
+
+	vector<string> get_benchmark_codes() const {
+		vector<string> benchmark_codes;
+
+		for(auto benchmark_code_pair : codes_by_order_){
+			benchmark_codes.push_back(benchmark_code_pair.second);
+		}
+
+		return benchmark_codes;
+	}
+
 };
 
 class Passwords {
@@ -274,18 +329,49 @@ public:
 	Passwords() {
 		using namespace YAML;
 
-		Node file = LoadFile(param_direct<string>("~passwords_file", "passwords.yaml"));
-		if (!file.IsMap()) {
-			ROS_FATAL_STREAM("Passwords file is not a map!");
-			abort_rsbb();
-		}
-		for (auto const& team_node : file) {
-			passwords_[team_node.first.as<string>()] = team_node.second.as<string>();
+		if( param_direct<bool>("~generate_schedule", true)){
+
+			string teams_list_file_path = param_direct<string>("~teams_list_file", "");
+
+			if(teams_list_file_path.empty()){
+				ROS_FATAL_STREAM("Teams list file is missing");
+				abort_rsbb();
+			}
+
+			Node file = LoadFile(teams_list_file_path);
+
+			Node teams_list_node = file["teams_list"];
+
+			if (!teams_list_node || !teams_list_node.IsSequence()) {
+				ROS_FATAL_STREAM("teams_list in teams list file is not a sequence");
+				abort_rsbb();
+			}
+
+			for (auto const& team_node : teams_list_node) passwords_[team_node["name"].as<string>()] = team_node["password"].as<string>();
+
+		}else{
+
+			string passwords_file_path = param_direct<string>("~passwords_file", "");
+
+			if(passwords_file_path.empty()){
+				ROS_FATAL_STREAM("Passwords file is missing");
+				abort_rsbb();
+			}
+
+			Node file = LoadFile(passwords_file_path);
+
+			if (!file.IsMap()) {
+				ROS_FATAL_STREAM("Passwords file is not a map");
+				abort_rsbb();
+			}
+
+			for (auto const& team_node : file) {
+				passwords_[team_node.first.as<string>()] = team_node.second.as<string>();
+			}
 		}
 	}
 
-	string const&
-	get(string const& team) const {
+	string const& get(string const& team) const {
 		auto b = passwords_.find(team);
 		if (b == passwords_.end()) {
 			ROS_FATAL_STREAM("Could not find password for team \"" << team << "\"");

@@ -36,6 +36,6 @@
     
   </group>
   
-  <include file="$(find roah_rsbb)/launch/roah_rsbb_client.launch"/>
+  <include file="$(find roah_rsbb)/launch/roah_rsbb_client_dev.launch"/>
   
 </launch>

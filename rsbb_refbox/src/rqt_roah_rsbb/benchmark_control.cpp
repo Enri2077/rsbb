@@ -116,7 +116,6 @@ void BenchmarkControl::update() {
 
 		if (current_index_text != new_zone) {
 			ui_.zone->setCurrentIndex(ui_.zone->findText(new_zone)); // Guaranteed to exist by for loop above
-
 		}
 
 		bool benchmark_changed = false;
@@ -130,15 +129,16 @@ void BenchmarkControl::update() {
 			ui_.run_selector->setValue((int) current_zone->run);
 		}
 
-		ui_.name->setText(QString::fromStdString(current_zone->name));
-		ui_.desc->setText(QString::fromStdString(current_zone->desc));
-		ui_.code->setText(QString::fromStdString(current_zone->code));
+		ui_.desc->setText(QString::fromStdString(current_zone->desc + " (" + current_zone->code + ")"));
 		ui_.timeout->setText(to_qstring(current_zone->timeout));
 		ui_.team->setText(QString::fromStdString(current_zone->team));
 		ui_.round->setText(QString::number(current_zone->run));
 		ui_.run_selector->setEnabled(current_zone->run_selector_enabled);
+
+//		ui_.name->setText(QString::fromStdString(current_zone->name));
+//		ui_.code->setText(QString::fromStdString(current_zone->code));
 //		ui_.run->setText(QString::number(current_zone->run));
-		ui_.sched->setText(to_qstring(current_zone->schedule));
+//		ui_.sched->setText(to_qstring(current_zone->schedule));
 
 		ui_.timer->setText(to_qstring(current_zone->timer));
 		QString new_state = QString::fromStdString(current_zone->state);
@@ -162,14 +162,15 @@ void BenchmarkControl::update() {
 		ui_.next->setEnabled(current_zone->next_enabled);
 
 	} else {
-		ui_.name->setText("--");
 		ui_.desc->setText("--");
-		ui_.code->setText("--");
 		ui_.timeout->setText("--");
 		ui_.team->setText("--");
 		ui_.round->setText("--");
+
+//		ui_.name->setText("--");
+//		ui_.code->setText("--");
 //		ui_.run->setText("--");
-		ui_.sched->setText("--");
+//		ui_.sched->setText("--");
 
 		ui_.timer->setText("00:00");
 		ui_.state->setPlainText("--");

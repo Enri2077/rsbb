@@ -65,27 +65,12 @@ void CurrentScore::shutdownPlugin() {
 }
 
 void CurrentScore::update() {
-//    auto core = result_rcv_.last ();
-//    string current_zone = param_direct ("current_zone", string());
-//
-//    if (core) {
-//      for (roah_rsbb::ZoneState const& zone : core->zones) {
-//        if (zone.zone == current_zone) {
-//          QString new_text = QString::fromStdString (zone.log);
-//          if (ui_.display->toPlainText() != new_text) {
-//            ui_.display->setPlainText (new_text);
-//            QScrollBar* sb = ui_.display->verticalScrollBar();
-//            sb->setValue (sb->maximum());
-//          }
-//          return;
-//        }
-//      }
-//    }
 
 	std_msgs::String::ConstPtr current_result_msg = result_rcv_.last();
-	if(current_result_msg) {
-		ui_.display->clear();
+	if(current_result_msg && ui_.display->toPlainText() != QString::fromStdString(current_result_msg->data)) {
 		ui_.display->setPlainText(QString::fromStdString(current_result_msg->data));
+		QScrollBar* sb = ui_.display->verticalScrollBar();
+		sb->setValue (sb->maximum());
 	}
 
 }

@@ -25,8 +25,8 @@
 #include "core_shared_state.h"
 
 struct Event {
-	string benchmark_code;
 	Benchmark benchmark;
+	string benchmark_code;
 	string team;
 	string password;
 	unsigned round;
@@ -45,10 +45,25 @@ struct Event {
 		// interval_time = Duration (yamlschedget<double> (event_node, "interval_time"));
 	}
 
+	Event(const Benchmark& benchmark_, string team_, string password_, Time scheduled_time_) {
+		benchmark = benchmark_;
+		benchmark_code = benchmark_.code;
+		team = team_;
+		round = 0;
+		run = 0;
+		password = password_;
+		scheduled_time = scheduled_time_;
+	}
+
 };
 
 std::ostream& operator<<(std::ostream& os, const Event& e) {
-	os << "benchmark_code: " << e.benchmark_code << ", team: " << e.team << ", round: " << e.round << ", run: " << e.run;
+	os 		<< "benchmark_code: " << e.benchmark_code
+			<< ", team: " << e.team
+			<< ", password: " << e.password
+			<< ", round: " << e.round
+			<< ", run: " << e.run
+			<< ", scheduled_time: " << e.scheduled_time;
 	return os;
 }
 

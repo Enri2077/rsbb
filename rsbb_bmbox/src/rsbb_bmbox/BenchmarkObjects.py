@@ -196,10 +196,11 @@ class RefBoxComm:
 		
 		try:
 			self.__current_referee_score = yaml.load(request.score)
+			self.save_and_publish_score()
 		except yaml.YAMLError as e:
 			rospy.logerr("referee_score_callback: YAMLError while parsing refere score yaml string\n%s"%e)
 		
-		print "referee_score_callback:\n", self.__current_referee_score
+#		print "referee_score_callback:\n", self.__current_referee_score
 		
 		return RefereeScoreResponse(True)
 	
@@ -477,7 +478,7 @@ class RefBoxComm:
 		elif self.__refbox_state.benchmark_state == RefBoxState.EMERGENCY_STOP: return 'EMERGENCY_STOP: benchmark stopped due to emergency'
 		elif self.__refbox_state.benchmark_state == RefBoxState.ERROR:          return 'ERROR: benchmark terminated due to RefBox error'
 		elif self.__refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT: return 'GLOBAL_TIMEOUT: benchmark ended due to global timeout'
-		else:                                                                   return 'still running or unnown reason'
+		else:                                                                   return 'still running or unknown reason'
 	
 	def can_terminate_benchmark(self):
 		return not self.is_benchmark_running() or self.__is_waiting_to_start()
@@ -555,12 +556,12 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		
 		try:
 			benchmark_configs_directory = rospy.get_param("~benchmark_configs_directory")
-			print "\n\n\n\nbenchmark_configs_directory:", benchmark_configs_directory, "\n\n\n\n"
+			rospy.logdebug("benchmark_configs_directory: %s" % (benchmark_configs_directory))
 			
 			benchmark_configs_path = path.normpath(path.expanduser(benchmark_configs_directory))
 			
 			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
-			print "\n\n\n\nbenchmark_config_path:", benchmark_config_path, "\n\n\n\n"
+			rospy.logdebug("benchmark_config_path: %s" % (benchmark_config_path))
 			
 			self.__result_object['benchmark_info']['params'] = "None"
 			

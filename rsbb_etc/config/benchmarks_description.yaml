@@ -1,7 +1,27 @@
 benchmarks_description:
-- name: RoCKIn@Home Task Benchmark 1
-  code: HGTKMH 
-  desc: Getting to know my home
+
+- code: "STB"
+  desc: "Test Benchmark: Simple Test Benchmark"
+  scripted: true
+  multiple_robots: false
+  order: 1
+  default_goal_timeout: 30.000
+  global_timeout: 200.0
+  scoring:
+    - Penalized Behaviors:
+      - { type: uint, desc: "The robot bumps into the furniture or people." }
+    - Disqualifying Behaviors:
+      - { type: uint, desc: "The robot hits people or the furniture." }
+      - { type: uint, desc: "The robot damages the test bed." }
+  record_topics:
+    - "/bmbox/actor/pose"
+    - "/bmbox/actor/pose2d"
+
+- code: "HGTKMH"
+  desc: "Task Benchmark 1: Getting to know my home"
+  scripted: false
+  multiple_robots: false
+  order: 2
   timeout: 600.000
   scoring:
     - Achievements:
@@ -16,10 +36,12 @@ benchmarks_description:
     - Disqualifying Behaviors:
       - { type: uint, desc: "The robot hits Annie or another person in the environment." }
       - { type: uint, desc: "The robot damages the test bed." }
-  
-- name: RoCKIn@Home Task Benchmark 2
-  code: HWV
-  desc: Welcoming visitors
+
+- code: "HWV"
+  desc: "Task Benchmark 2: Welcoming visitors"
+  scripted: false
+  multiple_robots: false
+  order: 3
   timeout: 600.000
   scoring:
     - Achievements:
@@ -41,10 +63,12 @@ benchmarks_description:
     - Disqualifying Behaviors:
       - { type: uint, desc: "The robot hits Annie or one of the visitors." }
       - { type: uint, desc: "The robot damages the test bed. " }
-  
-- name: RoCKIn@Home Task Benchmark 3
-  code: HCFGAC
-  desc: Catering for Granny Annie's Comfort
+
+- code: "HCFGAC"
+  desc: "Task Benchmark 3: Catering for Granny Annie's Comfort"
+  scripted: false
+  multiple_robots: false
+  order: 4
   timeout: 600.000
   scoring:
     - Achievements:
@@ -61,44 +85,27 @@ benchmarks_description:
       - { type: uint, desc: "The robot hits Annie or another person in the environment." }
       - { type: uint, desc: "The robot damages or destroys the objects requested to manipulate." }
       - { type: uint, desc: "The robot damages the test bed." }
-  
-- name: RoCKIn@Home Functionality Benchmark 1
-  code: HOPF
-  prefix: fbm1h
-  desc: Object Perception Functionality
-  timeout: 600.000
-  total_timeout: 600.000
-  record_topics:
-    - /bmbox/table_origin/pose
-    - /bmbox/table_origin/pose2d
-    - /bmbox/positioner_origin/pose
-    - /bmbox/positioner_origin/pose2d
-  
-- name: RoCKIn@Home Functionality Benchmark 2
-  code: HNF
-  desc: Navigation Functionality
-  prefix: fbm2h
-  timeout: 90.0 #120.0
-  total_timeout: 3600.0
-  record_topics:
-    - /bmbox/robot/pose
-    - /bmbox/robot/pose2d
-    - /bmbox/actor/pose
-    - /bmbox/actor/pose2d
 
-  
-- name: RoCKIn@Home Functionality Benchmark 3
-  code: HSUF
-  prefix: fbm3h
-  desc: Speech Understanding Functionality
-  timeout: 120.000
-  
-- name: Simple Test Benchmark 
-  code: STB
-  prefix: stb
-  desc: Simple Test Benchmark
-  timeout: 30.000
-  total_timeout: 200.0
+- code: "HOPF"
+  desc: "Functionality Benchmark 1: Object Perception Functionality"
+  scripted: true
+  multiple_robots: false
+  order: 5
+  default_goal_timeout: 120.000
+  global_timeout: 600.0
+  record_topics:
+    - "/bmbox/table_origin/pose"
+    - "/bmbox/table_origin/pose2d"
+    - "/bmbox/positioner_origin/pose"
+    - "/bmbox/positioner_origin/pose2d"
+
+- code: "HNF"
+  desc: "Functionality Benchmark 2: Navigation Functionality"
+  scripted: true
+  multiple_robots: false
+  order: 6
+  default_goal_timeout: 120.000
+  global_timeout: 600.0
   scoring:
     - Penalized Behaviors:
       - { type: uint, desc: "The robot bumps into the furniture or people." }
@@ -106,10 +113,17 @@ benchmarks_description:
       - { type: uint, desc: "The robot hits people or the furniture." }
       - { type: uint, desc: "The robot damages the test bed." }
   record_topics:
-    - /bmbox/actor/pose
-    - /bmbox/actor/pose2d
+    - "/bmbox/robot/pose"
+    - "/bmbox/robot/pose2d"
+    - "/bmbox/actor/pose"
+    - "/bmbox/actor/pose2d"
 
-
+- code: "HSUF"
+  desc: "Functionality Benchmark 3: Speech Understanding Functionality"
+  scripted: false
+  multiple_robots: true
+  order: 7
+  timeout: 120.000
 
 
 

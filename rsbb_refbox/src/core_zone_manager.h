@@ -38,68 +38,104 @@ class Zone: boost::noncopyable {
 public:
 	typedef std::shared_ptr<Zone> Ptr;
 
-	Zone(CoreSharedState& ss, YAML::Node const& zone_node) : ss_(ss) {
+	Zone(CoreSharedState& ss, YAML::Node const& zone_node, bool generate_schedule = false) : ss_(ss) {
 
-		if (!zone_node["zone"]) {
-			ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry!");
-			abort_rsbb();
-		}
+		if (generate_schedule) {
 
-		name_ = zone_node["zone"].as<string>();
-
-		if (!zone_node["schedule"]) {
-			ROS_FATAL_STREAM("Schedule file is missing a \"schedule\" entry!");
-			abort_rsbb();
-		}
-
-		if (!zone_node["schedule"].IsSequence()) {
-			ROS_FATAL_STREAM("Schedule in schedule file is not a sequence!");
-			abort_rsbb();
-		}
-
-		for (YAML::Node const& event_node : zone_node["schedule"]) {
-
-			Event e = Event(event_node);
-			e.benchmark = ss_.benchmarks.get(e.benchmark_code);
-
-			if (e.team != "ALL") {
-				e.password = ss_.passwords.get(e.team);
-			}
-
-			events_.insert(make_pair(e.scheduled_time, e));
-
-			if (!( (e.benchmark_code == "HGTKMH")
-				|| (e.benchmark_code == "HWV")
-				|| (e.benchmark_code == "HCFGAC")
-				|| (e.benchmark_code == "HOPF")
-				|| (e.benchmark_code == "HNF")
-				|| (e.benchmark_code == "HSUF")
-				|| (e.benchmark_code == "STB") )) {
-				ROS_FATAL_STREAM("Zone " << name_ << ": unsupported benchmark code " << e.benchmark_code);
+			if (!zone_node["name"]) {
+				ROS_FATAL_STREAM("Teams list file is missing a \"name\" entry!");
 				abort_rsbb();
 			}
 
-			if (e.benchmark_code == "HSUF") {
+			name_ = zone_node["name"].as<string>();
+
+
+			int i = 0;
+
+			for(auto& benchmark_code : ss_.benchmarks.get_benchmark_codes()){
+				Time scheduled_time = Time(i++);
+
+				const Benchmark& b = ss_.benchmarks.get(benchmark_code);
+
+				string team_name;
+				string password;
+
+				if(b.multiple_robots){
+					team_name = "ALL";
+					password = "";
+				}else{
+					team_name = name_;
+					password = zone_node["password"].as<string>();
+				}
+
+				Event e = Event(b, team_name, password, scheduled_time);
+				events_.insert(make_pair(e.scheduled_time, e));
+			}
+
+		} else {
+
+			if (!zone_node["zone"]) {
+				ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry!");
+				abort_rsbb();
+			}
+
+			name_ = zone_node["zone"].as<string>();
+
+			if (!zone_node["schedule"]) {
+				ROS_FATAL_STREAM("Schedule file is missing a \"schedule\" entry!");
+				abort_rsbb();
+			}
+
+			if (!zone_node["schedule"].IsSequence()) {
+				ROS_FATAL_STREAM("Schedule in schedule file is not a sequence!");
+				abort_rsbb();
+			}
+
+			for (YAML::Node const& event_node : zone_node["schedule"]) {
+
+				Event e = Event(event_node);
+				e.benchmark = ss_.benchmarks.get(e.benchmark_code);
+
 				if (e.team != "ALL") {
-					ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code HSUF only supported for team ALL");
-					abort_rsbb();
-				}
-			}
-
-			if (   (e.benchmark_code == "HGTKMH")
-				|| (e.benchmark_code == "HWV")
-				|| (e.benchmark_code == "HCFGAC")
-				|| (e.benchmark_code == "HOPF")
-				|| (e.benchmark_code == "HNF")
-				|| (e.benchmark_code == "STB")) {
-
-				if (e.team == "ALL") {
-					ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code " << e.benchmark_code << " not supported for team ALL");
-					abort_rsbb();
+					e.password = ss_.passwords.get(e.team);
 				}
 
-			}
+				events_.insert(make_pair(e.scheduled_time, e));
 
+				if (!(
+						   (e.benchmark_code == "HGTKMH")
+						|| (e.benchmark_code == "HWV")
+						|| (e.benchmark_code == "HCFGAC")
+						|| (e.benchmark_code == "HOPF")
+						|| (e.benchmark_code == "HNF")
+						|| (e.benchmark_code == "HSUF")
+						|| (e.benchmark_code == "STB"))) {
+					ROS_FATAL_STREAM("Zone " << name_ << ": unsupported benchmark code " << e.benchmark_code);
+					abort_rsbb();
+				}
+
+				if (e.benchmark_code == "HSUF") {
+					if (e.team != "ALL") {
+						ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code HSUF only supported for team ALL");
+						abort_rsbb();
+					}
+				}
+
+				if (   (e.benchmark_code == "HGTKMH")
+					|| (e.benchmark_code == "HWV")
+					|| (e.benchmark_code == "HCFGAC")
+					|| (e.benchmark_code == "HOPF")
+					|| (e.benchmark_code == "HNF")
+					|| (e.benchmark_code == "STB")) {
+
+					if (e.team == "ALL") {
+						ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code " << e.benchmark_code << " not supported for team ALL");
+						abort_rsbb();
+					}
+
+				}
+
+			}
 		}
 
 		if (events_.empty()) {
@@ -340,7 +376,7 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " SET RUN: " << run);
 
-		current_event_->second.run = run; // TODO
+		current_event_->second.run = run;
 
 	}
 
@@ -469,15 +505,51 @@ public:
 
 		using namespace YAML;
 
-		Node file = LoadFile(param_direct<string>("~schedule_file", "schedule.yaml"));
-		if (!file.IsSequence()) {
-			ROS_FATAL_STREAM("Schedule file is not a sequence!");
-			abort_rsbb();
+		if( param_direct<bool>("~generate_schedule", true)){
+			string teams_list_file_path = param_direct<string>("~teams_list_file", "");
+
+			if(teams_list_file_path.empty()){
+				ROS_FATAL_STREAM( "Parameter teams_list_file is missing" );
+				abort_rsbb();
+			}
+
+			Node file = LoadFile(teams_list_file_path);
+
+			Node teams_list_node = file["teams_list"];
+
+			if (!teams_list_node || !teams_list_node.IsSequence()) {
+				ROS_FATAL_STREAM("teams_list in teams list file is not a sequence!");
+				abort_rsbb();
+			}
+
+			for (Node const& zone_node : teams_list_node) {
+				Zone::Ptr zone = make_shared<Zone>(ss_, zone_node, true);
+				zones_[zone->name()] = zone;
+			}
+
+		}else{
+
+			string schedule_file_path = param_direct<string>("~schedule_file", "");
+
+			if(schedule_file_path.empty()){
+				ROS_FATAL_STREAM( "Parameter schedule_file is missing" );
+				abort_rsbb();
+			}
+
+			Node file = LoadFile(schedule_file_path);
+
+			if (!file.IsSequence()) {
+				ROS_FATAL_STREAM("Schedule file is not a sequence!");
+				abort_rsbb();
+			}
+
+			for (Node const& zone_node : file) {
+				Zone::Ptr zone = make_shared<Zone>(ss_, zone_node);
+				zones_[zone->name()] = zone;
+			}
+
 		}
-		for (Node const& zone_node : file) {
-			Zone::Ptr zone = make_shared<Zone>(ss_, zone_node);
-			zones_[zone->name()] = zone;
-		}
+
 
 	}
 
