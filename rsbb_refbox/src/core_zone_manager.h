@@ -43,7 +43,7 @@ public:
 		if (generate_schedule) {
 
 			if (!zone_node["name"]) {
-				ROS_FATAL_STREAM("Teams list file is missing a \"name\" entry!");
+				ROS_FATAL_STREAM("Teams list file is missing a \"name\" entry");
 				abort_rsbb();
 			}
 
@@ -75,19 +75,19 @@ public:
 		} else {
 
 			if (!zone_node["zone"]) {
-				ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry!");
+				ROS_FATAL_STREAM("Schedule file is missing a \"zone\" entry");
 				abort_rsbb();
 			}
 
 			name_ = zone_node["zone"].as<string>();
 
 			if (!zone_node["schedule"]) {
-				ROS_FATAL_STREAM("Schedule file is missing a \"schedule\" entry!");
+				ROS_FATAL_STREAM("Schedule file is missing a \"schedule\" entry");
 				abort_rsbb();
 			}
 
 			if (!zone_node["schedule"].IsSequence()) {
-				ROS_FATAL_STREAM("Schedule in schedule file is not a sequence!");
+				ROS_FATAL_STREAM("Schedule in schedule file is not a sequence");
 				abort_rsbb();
 			}
 
@@ -102,37 +102,14 @@ public:
 
 				events_.insert(make_pair(e.scheduled_time, e));
 
-				if (!(
-						   (e.benchmark_code == "HGTKMH")
-						|| (e.benchmark_code == "HWV")
-						|| (e.benchmark_code == "HCFGAC")
-						|| (e.benchmark_code == "HOPF")
-						|| (e.benchmark_code == "HNF")
-						|| (e.benchmark_code == "HSUF")
-						|| (e.benchmark_code == "STB"))) {
-					ROS_FATAL_STREAM("Zone " << name_ << ": unsupported benchmark code " << e.benchmark_code);
+				if (e.benchmark.multiple_robots && e.team != "ALL") {
+					ROS_FATAL_STREAM("Zone " << name_ << ": for benchmarks with param \"multiple_robots = true\" only team ALL is supported");
 					abort_rsbb();
 				}
 
-				if (e.benchmark_code == "HSUF") {
-					if (e.team != "ALL") {
-						ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code HSUF only supported for team ALL");
-						abort_rsbb();
-					}
-				}
-
-				if (   (e.benchmark_code == "HGTKMH")
-					|| (e.benchmark_code == "HWV")
-					|| (e.benchmark_code == "HCFGAC")
-					|| (e.benchmark_code == "HOPF")
-					|| (e.benchmark_code == "HNF")
-					|| (e.benchmark_code == "STB")) {
-
-					if (e.team == "ALL") {
-						ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code " << e.benchmark_code << " not supported for team ALL");
-						abort_rsbb();
-					}
-
+				if (!e.benchmark.multiple_robots && e.team == "ALL") {
+					ROS_FATAL_STREAM("Zone " << name_ << ": only benchmarks with param \"multiple_robots = true\" support team ALL");
+					abort_rsbb();
 				}
 
 			}
@@ -168,9 +145,9 @@ public:
 
 		ROS_DEBUG_STREAM("Zone: " << name() << " CONNECT");
 
-		if (current_event_->second.benchmark_code == "HSUF") {
+		if (current_event_->second.benchmark.multiple_robots) {
 			if (current_event_->second.team != "ALL") {
-				ROS_FATAL_STREAM("Zone " << name_ << ": benchmark code HSUF only supported for team ALL");
+				ROS_FATAL_STREAM("Zone " << name_ << ": for benchmarks with param \"multiple_robots = true\" only team ALL is supported");
 				abort_rsbb();
 			}
 
@@ -195,23 +172,10 @@ public:
 
 			try {
 
-				if ((current_event_->second.benchmark_code == "HGTKMH")
-				 || (current_event_->second.benchmark_code == "HWV")
-				 || (current_event_->second.benchmark_code == "HCFGAC")) {
-
-					executing_benchmark_.reset(new ExecutingSimpleBenchmark(ss_, current_event_->second, boost::bind(&Zone::end, this), ri.robot));
-
-				} else if ((current_event_->second.benchmark_code == "HOPF")
-						|| (current_event_->second.benchmark_code == "HNF")
-						|| (current_event_->second.benchmark_code == "STB")) {
-
+				if (current_event_->second.benchmark.scripted) {
 					executing_benchmark_.reset(new ExecutingExternallyControlledBenchmark(ss_, current_event_->second, boost::bind(&Zone::end, this), ri.robot));
-
 				} else {
-
-					ROS_FATAL_STREAM("Zone " << name_ << " unsupported benchmark code: " << current_event_->second.benchmark_code);
-					abort_rsbb();
-
+					executing_benchmark_.reset(new ExecutingSimpleBenchmark(ss_, current_event_->second, boost::bind(&Zone::end, this), ri.robot));
 				}
 
 				ok = true;
@@ -416,7 +380,7 @@ public:
 
 			Duration allowed_skew = Duration(param_direct<double>("~allowed_skew", 0.5));
 
-			if (current_event_->second.benchmark.code == "HSUF") {
+			if (current_event_->second.benchmark.multiple_robots) {
 
 				vector<string> teams_out_of_sync;
 				for (roah_rsbb::RobotInfo const& ri : ss_.active_robots.get()) {

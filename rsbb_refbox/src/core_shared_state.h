@@ -164,6 +164,7 @@ struct Benchmark {
 	int order;
 	bool scripted;
 	bool multiple_robots;
+	bool commands_devices;
 	Duration timeout;
 	Duration total_timeout;
 	vector<string> record_topics;
@@ -216,6 +217,11 @@ public:
 				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"multiple_robots\" [bool] entry should be specified.");
 				abort_rsbb();
 			}
+			if (!benchmark_node["commands_devices"]) {
+				ROS_FATAL_STREAM("In benchmarks_description, \"commands_devices\" is missing for benchmark [" << benchmark_node["code"] << "]");
+				ROS_FATAL_STREAM("In benchmarks_description, for each benchmark a \"commands_devices\" [bool] entry should be specified.");
+				abort_rsbb();
+			}
 			if (benchmark_node["record_topics"] && !benchmark_node["record_topics"].IsSequence()) {
 				ROS_FATAL_STREAM("In benchmarks_description, \"record_topics\" is not a sequence for benchmark [" << benchmark_node["code"] << "]");
 				ROS_FATAL_STREAM("In benchmarks_description, the \"record_topics\" entry should be a sequence");
@@ -244,6 +250,7 @@ public:
 			b.desc = benchmark_node["desc"].as<string>();
 			b.scripted = benchmark_node["scripted"].as<bool>();
 			b.multiple_robots = benchmark_node["multiple_robots"].as<bool>();
+			b.commands_devices = benchmark_node["commands_devices"].as<bool>();
 
 			if(benchmark_node["timeout"]){
 				b.timeout = Duration(benchmark_node["timeout"].as<double>());

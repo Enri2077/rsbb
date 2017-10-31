@@ -202,8 +202,7 @@ public:
 		}
 	}
 
-	virtual void
-	fill_2(Time const& now, roah_rsbb::ZoneState& zone) = 0;
+	virtual void fill_2(Time const& now, roah_rsbb::ZoneState& zone) = 0;
 
 	virtual void fill(Time const& now, roah_rsbb::ZoneState& zone) {
 		switch (phase_) {
@@ -337,12 +336,19 @@ public:
 	ExecutingSingleRobotBenchmark(CoreSharedState& ss, Event const& event, boost::function<void()> end, string const& robot_name) :
 				ExecutingBenchmark(ss, event, end),
 				robot_name_(robot_name),
-				private_channel_(
-						new roah_rsbb::RosPrivateChannel(param_direct<string> ("~rsbb_host", "10.123.255.255"), ss_.private_port(), event_.password,
-								param_direct<string> ("~rsbb_cypher", "aes-128-cbc"))),
-				state_timer_(ss_.nh.createTimer(Duration(0.2), &ExecutingSingleRobotBenchmark::transmit_state, this)), messages_saved_(0),
-				rcv_notifications_(log_, "/notification", display_online_data_), rcv_activation_event_(log_, "/command", display_online_data_),
-				rcv_visitor_(log_, "/visitor", display_online_data_), rcv_final_command_(log_, "/command", display_online_data_) {
+				private_channel_(new roah_rsbb::RosPrivateChannel(
+						param_direct<string> ("~rsbb_host", "10.123.255.255"),
+						ss_.private_port(),
+						event_.password,
+						param_direct<string> ("~rsbb_cypher", "aes-128-cbc")
+						)),
+				state_timer_(ss_.nh.createTimer(Duration(0.2), &ExecutingSingleRobotBenchmark::transmit_state, this)),
+				messages_saved_(0),
+				rcv_notifications_(log_, "/notification", display_online_data_),
+				rcv_activation_event_(log_, "/command", display_online_data_),
+				rcv_visitor_(log_, "/visitor", display_online_data_),
+				rcv_final_command_(log_, "/command", display_online_data_)
+	{
 		ack_.set_sec(0);
 		ack_.set_nsec(0);
 		private_channel_->set_benchmark_state_callback(&ExecutingSingleRobotBenchmark::receive_benchmark_state, this);
@@ -389,7 +395,7 @@ class ExecutingSimpleBenchmark: public ExecutingSingleRobotBenchmark {
 			break;
 		}
 
-		if (event_.benchmark_code == "HCFGAC") {
+		if (event_.benchmark.commands_devices) {
 			if (msg.has_devices_switch_1() && (msg.devices_switch_1() != ss_.last_devices_state->switch_1)) {
 				roah_devices::Bool b;
 				b.request.data = msg.devices_switch_1();
@@ -420,7 +426,6 @@ class ExecutingSimpleBenchmark: public ExecutingSingleRobotBenchmark {
 				call_service("/devices/dimmer/set", p);
 				log_.log_uint8("/rsbb_log/devices/dimmer", now, p.request.data);
 			}
-
 			if (msg.has_tablet_display_map() && (ss_.tablet_display_map != msg.tablet_display_map())) {
 				ss_.tablet_display_map = msg.tablet_display_map();
 				log_.log_uint8("/rsbb_log/tablet/display_map", now, ss_.tablet_display_map ? 1 : 0);
@@ -490,15 +495,6 @@ public:
  *
  *
  */
-
-
-
-
-
-
-
-
-
 
 class ExecutingExternallyControlledBenchmark: public ExecutingSingleRobotBenchmark {
 
@@ -603,7 +599,7 @@ public:
 		record_request_.record = true;
 		record_request_.benchmark_code = event_.benchmark_code;
 		record_request_.team = event_.team;
-		record_request_.robot = "";
+//		record_request_.robot = "";
 		record_request_.run = event_.run;
 		record_request_.topics = event_.benchmark.record_topics;
 		record_request_publisher_.publish(record_request_);
@@ -678,19 +674,6 @@ public:
 		current_goal_payload_ = "";
 		current_goal_timeout_ = 0;
 
-		if(completed_by_robot || goal_timeout) {
-//			GoalComplete goal_complete;
-//			goal_complete.request.goal_result = result;
-//			goal_complete.request.goal_timeout = goal_timeout;
-//			goal_complete.request.refbox_state = refbox_state_;
-//
-//			if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
-//				ROS_INFO("Called bmbox/goal_complete service");
-//			}else{
-//				ROS_ERROR("Failed to call bmbox/goal_complete service or bmbox refused to acknowledge that goal is completed and receive the result");
-//			}
-		}
-
 	}
 
 	/*
@@ -753,7 +736,6 @@ public:
 		// advertise that a timeout has occurred
 		timeout_pub_.publish(std_msgs::Empty());
 
-//		set_goal_execution_state(Time::now(), RefBoxState::GOAL_TIMEOUT);
 		set_state(Time::now(), roah_rsbb_msgs::BenchmarkState_State_STOP, "");
 		end_goal_execution(false, true, "");
 
@@ -797,35 +779,7 @@ public:
 		clear_manual_operation();
 		end_goal_execution();
 
-
-//		GoalComplete goal_complete;
-//		goal_complete.request.goal_result = "";
-//		goal_complete.request.goal_timeout = false;
-//		goal_complete.request.refbox_state = get_benchmark_state_copy(RefBoxState::GLOBAL_TIMEOUT);
-//
-//		if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
-//			ROS_INFO("Called \"bmbox/goal_complete\" service");
-//			set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
-//		}else{
-//
-//			Rate r(5);
-//			for(int i=0; i<10; i++){
-//				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal is ended");
-//				// TODO add waitForService?
-//				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
-//					set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
-////					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
-//					break;
-//				}
-//				r.sleep();
-//			}
-//
-//		}
-
 		set_benchmark_state(RefBoxState::GLOBAL_TIMEOUT);
-
-
-
 
 		phase_post("Stopped due to global timeout!");
 
@@ -911,27 +865,6 @@ public:
 	}
 
 	void fill_2(Time const& now, roah_rsbb::ZoneState& zone){}
-
-//	void set_refbox_state(RefBoxState::_benchmark_state_type benchmark_state, RefBoxState::_goal_execution_state_type goal_execution_state, RefBoxState::_manual_operation_state_type manual_operation_state) {
-//
-//		if (refbox_state_.benchmark_state == benchmark_state && refbox_state_.benchmark_payload == ""
-//		&&  refbox_state_.goal_execution_state == goal_execution_state && refbox_state_.goal_execution_payload == ""
-//		&&  refbox_state_.manual_operation_state == manual_operation_state && refbox_state_.manual_operation_payload == "") {
-//			return;
-//		}
-//
-//		refbox_state_.benchmark_state = benchmark_state;
-//		refbox_state_.benchmark_payload = "";
-//
-//		refbox_state_.goal_execution_state = goal_execution_state;
-//		refbox_state_.goal_execution_payload = "";
-//
-//		refbox_state_.manual_operation_state = manual_operation_state;
-//		refbox_state_.manual_operation_payload = "";
-//
-//		refbox_state_pub_.publish(refbox_state_);
-//
-//	}
 
 	void set_benchmark_state(RefBoxState::_benchmark_state_type benchmark_state, string const& benchmark_payload = "") {
 
@@ -1101,30 +1034,6 @@ public:
 	void stop() {
 
 		end_goal_execution();
-
-//		GoalComplete goal_complete;
-//		goal_complete.request.goal_result = "";
-//		goal_complete.request.goal_timeout = false;
-//		goal_complete.request.refbox_state = get_benchmark_state_copy(RefBoxState::STOP);
-//
-//		if (goal_complete_service_.call(goal_complete) && goal_complete.response.result) {
-//			ROS_INFO("Called \"bmbox/goal_complete\" service");
-//			set_benchmark_state(RefBoxState::STOP);
-//		}else{
-//
-//			Rate r(5);
-//			for(int i=0; i<10; i++){
-//				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal is ended");
-//				// TODO add waitForService?
-//				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
-//					set_benchmark_state(RefBoxState::STOP);
-////					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
-//					break;
-//				}
-//				r.sleep();
-//			}
-//
-//		}
 
 		set_benchmark_state(RefBoxState::STOP);
 
@@ -1426,6 +1335,46 @@ public:
 
 			break;
 		}
+
+
+		if (event_.benchmark.commands_devices) {
+			if (msg.has_devices_switch_1() && (msg.devices_switch_1() != ss_.last_devices_state->switch_1)) {
+				roah_devices::Bool b;
+				b.request.data = msg.devices_switch_1();
+				call_service("/devices/switch_1/set", b);
+				log_.log_uint8("/rsbb_log/devices/switch_1", now, b.request.data ? 1 : 0);
+			}
+			if (msg.has_devices_switch_2() && (msg.devices_switch_2() != ss_.last_devices_state->switch_2)) {
+				roah_devices::Bool b;
+				b.request.data = msg.devices_switch_2();
+				call_service("/devices/switch_2/set", b);
+				log_.log_uint8("/rsbb_log/devices/switch_2", now, b.request.data ? 1 : 0);
+			}
+			if (msg.has_devices_switch_3() && (msg.devices_switch_3() != ss_.last_devices_state->switch_3)) {
+				roah_devices::Bool b;
+				b.request.data = msg.devices_switch_3();
+				call_service("/devices/switch_3/set", b);
+				log_.log_uint8("/rsbb_log/devices/switch_3", now, b.request.data ? 1 : 0);
+			}
+			if (msg.has_devices_blinds() && (msg.devices_blinds() != ss_.last_devices_state->blinds)) {
+				roah_devices::Percentage p;
+				p.request.data = msg.devices_blinds();
+				call_service("/devices/blinds/set", p);
+				log_.log_uint8("/rsbb_log/devices/blinds", now, p.request.data);
+			}
+			if (msg.has_devices_dimmer() && (msg.devices_dimmer() != ss_.last_devices_state->dimmer)) {
+				roah_devices::Percentage p;
+				p.request.data = msg.devices_dimmer();
+				call_service("/devices/dimmer/set", p);
+				log_.log_uint8("/rsbb_log/devices/dimmer", now, p.request.data);
+			}
+			if (msg.has_tablet_display_map() && (ss_.tablet_display_map != msg.tablet_display_map())) {
+				ss_.tablet_display_map = msg.tablet_display_map();
+				log_.log_uint8("/rsbb_log/tablet/display_map", now, ss_.tablet_display_map ? 1 : 0);
+			}
+		}
+
+
 	}
 
 	string get_bmbox_state_string(BmBoxState::_state_type r){
