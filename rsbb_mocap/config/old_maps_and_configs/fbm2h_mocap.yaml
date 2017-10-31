@@ -1,6 +1,0 @@
-rigid_bodies:
-  '3':
-    pose: robot_at_home/pose
-    pose2d: robot_at_home/pose2d
-    child_frame_id: robot_at_home
-    parent_frame_id: world

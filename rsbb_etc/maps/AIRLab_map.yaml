@@ -1,4 +1,4 @@
-image: fbm2h_map.pgm
+image: AIRLab_map.pgm
 resolution: 0.100000
 origin: [-10.200000, -23.8000, 0.800000]
 negate: 0

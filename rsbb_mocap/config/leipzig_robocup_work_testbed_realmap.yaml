@@ -1,7 +1,0 @@
-image: leipzig_robocup_work_testbed_realmap.png
-resolution: 0.006837607
-origin: [5.2, 2.78, 3.141592653589793]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196
-

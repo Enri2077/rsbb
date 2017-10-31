@@ -13,7 +13,7 @@ rigid_bodies:
     
   '3':
     pose: positioner_origin/pose
-    pose2d: ref_board/pose2d
+    pose2d: positioner_origin/pose2d
     child_frame_id: positioner_origin
     parent_frame_id: world
 
