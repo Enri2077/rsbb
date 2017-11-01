@@ -1382,16 +1382,16 @@ public:
 
 		switch (r) {
 		case BmBoxState::COMPLETED_MANUAL_OPERATION:	s = "COMP_MO";	 		break;
-		case BmBoxState::END:							s = "END"; 					break;
-		case BmBoxState::EXECUTING_GOAL:				s = "EXEC_GOAL"; 		break;
-		case BmBoxState::READY: 						s = "READY"; 				break;
-		case BmBoxState::START: 						s = "START"; 				break;
-		case BmBoxState::TRANSMITTING_GOAL: 			s = "TX_GOAL"; 	break;
-		case BmBoxState::TRANSMITTING_SCORE: 			s = "TX_SCORE"; 	break;
-		case BmBoxState::WAITING_CLIENT: 				s = "WAITING_START"; 		break;
-		case BmBoxState::WAITING_MANUAL_OPERATION: 		s = "WAITING_MO"; 			break;
-		case BmBoxState::WAITING_RESULT: 				s = "WAITING_RESULT"; 		break;
-		default:										s = "UNKNOWN";				break;
+		case BmBoxState::END:							s = "END"; 				break;
+		case BmBoxState::EXECUTING_GOAL:				s = "EXEC GOAL"; 		break;
+		case BmBoxState::READY: 						s = "READY"; 			break;
+		case BmBoxState::START: 						s = "STARTING UP";	 	break;
+		case BmBoxState::TRANSMITTING_GOAL: 			s = "TX GOAL"; 			break;
+		case BmBoxState::TRANSMITTING_SCORE: 			s = "TX SCORE"; 		break;
+		case BmBoxState::WAITING_CLIENT: 				s = "WAITING START"; 	break;
+		case BmBoxState::WAITING_MANUAL_OPERATION: 		s = "EXEC M.O."; 		break;
+		case BmBoxState::WAITING_RESULT: 				s = "WAITING RESULT";	break;
+		default:										s = "UNKNOWN";			break;
 		}
 
 		return s;
@@ -1402,19 +1402,19 @@ public:
 		string s;
 
 		switch (r) {
-		case RefBoxState::START:						s = "START";				break;
-		case RefBoxState::EXECUTING_BENCHMARK:			s = "EXECUTING";	break;
-		case RefBoxState::END:							s = "END";					break;
-		case RefBoxState::STOP:							s = "STOP";					break;
-		case RefBoxState::EMERGENCY_STOP:				s = "EMERGENCY_STOP";		break;
-		case RefBoxState::ERROR:						s = "ERROR";				break;
-		case RefBoxState::GLOBAL_TIMEOUT:				s = "GLOBAL_TIMEOUT";		break;
-		case RefBoxState::READY:						s = "READY";				break;
-		case RefBoxState::TRANSMITTING_GOAL:			s = "TX_GOAL";	break;
-		case RefBoxState::EXECUTING_GOAL:				s = "EXEC_GOAL";		break;
-		case RefBoxState::GOAL_TIMEOUT:					s = "GOAL_TIMEOUT";			break;
-		case RefBoxState::EXECUTING_MANUAL_OPERATION:	s = "EXEC_M_O";			break;
-		default:										s = "UNKNOWN";				break;
+		case RefBoxState::START:						s = "WAITING START";	break;
+		case RefBoxState::EXECUTING_BENCHMARK:			s = "EXECUTING";		break;
+		case RefBoxState::END:							s = "END";				break;
+		case RefBoxState::STOP:							s = "STOP";				break;
+		case RefBoxState::EMERGENCY_STOP:				s = "EMERGENCY STOP";	break;
+		case RefBoxState::ERROR:						s = "ERROR";			break;
+		case RefBoxState::GLOBAL_TIMEOUT:				s = "GLOBAL TIMEOUT";	break;
+		case RefBoxState::READY:						s = "READY";			break;
+		case RefBoxState::TRANSMITTING_GOAL:			s = "TRANSMITTING";		break;
+		case RefBoxState::EXECUTING_GOAL:				s = "EXECUTING";		break;
+		case RefBoxState::GOAL_TIMEOUT:					s = "GOAL TIMEOUT";		break;
+		case RefBoxState::EXECUTING_MANUAL_OPERATION:	s = "EXECUTING";		break;
+		default:										s = "UNKNOWN";			break;
 		}
 
 		return s;
@@ -1424,12 +1424,12 @@ public:
 		string s;
 
 		switch (r) {
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_PREPARING:			s = "PREPARING"; 		break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_WAITING_GOAL:		s = "WAITING_GOAL"; 	break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_EXECUTING:			s = "EXECUTING";		break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_RESULT_TX:			s = "RESULT_TX"; 		break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_STOP:				s = "STOP"; 			break;
-		default:																	s = "UNKNOWN";			break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_PREPARING:			s = "PREPARING"; 	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_WAITING_GOAL:		s = "WAITING GOAL"; break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_EXECUTING:			s = "EXECUTING";	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_RESULT_TX:			s = "RESULT TX"; 	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_STOP:				s = "STOP"; 		break;
+		default:																	s = "UNKNOWN";		break;
 		}
 
 		return s;
@@ -1464,77 +1464,77 @@ public:
 		case BmBoxState::WAITING_CLIENT: 				cout << "WAITING_CLIENT    "; 		break;
 		case BmBoxState::WAITING_MANUAL_OPERATION: 		cout << "WAITING_MO        "; 		break;
 		case BmBoxState::WAITING_RESULT: 				cout << "WAITING_RESULT    "; 		break;
-		default:																	cout << last_bmbox_state_->state; 	break;
+		default:										cout << last_bmbox_state_->state; 	break;
 		}
 
 		cout << "\tBS ";
 		switch (refbox_state_.benchmark_state) {
-		case RefBoxState::START:						cout << "START              "; break;
-		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; break;
-		case RefBoxState::END:							cout << "END                "; break;
-		case RefBoxState::STOP:							cout << "STOP               "; break;
-		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; break;
-		case RefBoxState::ERROR:						cout << "ERROR              "; break;
-		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; break;
-		case RefBoxState::READY:						cout << "READY              "; break;
-		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; break;
-		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     "; break;
-		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; break;
-		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; break;
-		default:										cout << refbox_state_.benchmark_state;break;
+		case RefBoxState::START:						cout << "START              "; 			break;
+		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; 			break;
+		case RefBoxState::END:							cout << "END                "; 			break;
+		case RefBoxState::STOP:							cout << "STOP               "; 			break;
+		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; 			break;
+		case RefBoxState::ERROR:						cout << "ERROR              "; 			break;
+		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; 			break;
+		case RefBoxState::READY:						cout << "READY              "; 			break;
+		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; 			break;
+		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     ";			break;
+		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; 			break;
+		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; 			break;
+		default:										cout << refbox_state_.benchmark_state;	break;
 		}
 
 		cout << "\tGS ";
 		switch (refbox_state_.goal_execution_state) {
-		case RefBoxState::START:						cout << "START              "; break;
-		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; break;
-		case RefBoxState::END:							cout << "END                "; break;
-		case RefBoxState::STOP:							cout << "STOP               "; break;
-		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; break;
-		case RefBoxState::ERROR:						cout << "ERROR              "; break;
-		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; break;
-		case RefBoxState::READY:						cout << "READY              "; break;
-		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; break;
-		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     "; break;
-		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; break;
-		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; break;
-		default:										cout << refbox_state_.goal_execution_state;break;
+		case RefBoxState::START:						cout << "START              "; 				break;
+		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; 				break;
+		case RefBoxState::END:							cout << "END                "; 				break;
+		case RefBoxState::STOP:							cout << "STOP               "; 				break;
+		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; 				break;
+		case RefBoxState::ERROR:						cout << "ERROR              "; 				break;
+		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; 				break;
+		case RefBoxState::READY:						cout << "READY              "; 				break;
+		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; 				break;
+		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     "; 				break;
+		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; 				break;
+		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; 				break;
+		default:										cout << refbox_state_.goal_execution_state;	break;
 		}
 
 		cout << "\tMS ";
 		switch (refbox_state_.manual_operation_state) {
-		case RefBoxState::START:						cout << "START              "; break;
-		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; break;
-		case RefBoxState::END:							cout << "END                "; break;
-		case RefBoxState::STOP:							cout << "STOP               "; break;
-		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; break;
-		case RefBoxState::ERROR:						cout << "ERROR              "; break;
-		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; break;
-		case RefBoxState::READY:						cout << "READY              "; break;
-		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; break;
-		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     "; break;
-		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; break;
-		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; break;
-		default:										cout << refbox_state_.manual_operation_state;break;
+		case RefBoxState::START:						cout << "START              "; 					break;
+		case RefBoxState::EXECUTING_BENCHMARK:			cout << "EXECUTING_BENCHMARK"; 					break;
+		case RefBoxState::END:							cout << "END                "; 					break;
+		case RefBoxState::STOP:							cout << "STOP               "; 					break;
+		case RefBoxState::EMERGENCY_STOP:				cout << "EMERGENCY_STOP     "; 					break;
+		case RefBoxState::ERROR:						cout << "ERROR              "; 					break;
+		case RefBoxState::GLOBAL_TIMEOUT:				cout << "GLOBAL_TIMEOUT     "; 					break;
+		case RefBoxState::READY:						cout << "READY              "; 					break;
+		case RefBoxState::TRANSMITTING_GOAL:			cout << "TRANSMITTING_GOAL  "; 					break;
+		case RefBoxState::EXECUTING_GOAL:				cout << "EXECUTING_GOAL     "; 					break;
+		case RefBoxState::GOAL_TIMEOUT:					cout << "GOAL_TIMEOUT       "; 					break;
+		case RefBoxState::EXECUTING_MANUAL_OPERATION:	cout << "EXECUTING_MO       "; 					break;
+		default:										cout << refbox_state_.manual_operation_state;	break;
 		}
 
 		cout << "\tRB ";
 		switch (state_) {
-		case roah_rsbb_msgs::BenchmarkState_State_PREPARE:							cout << "PREPARE       ";			break;
-		case roah_rsbb_msgs::BenchmarkState_State_GOAL_TX:							cout << "GOAL_TX       "; 			break;
-		case roah_rsbb_msgs::BenchmarkState_State_WAITING_RESULT:					cout << "WAITING_RESULT";			break;
-		case roah_rsbb_msgs::BenchmarkState_State_STOP:								cout << "STOP          "; 			break;
-		default:																	cout << state_;						break;
+		case roah_rsbb_msgs::BenchmarkState_State_PREPARE:							cout << "PREPARE       ";	break;
+		case roah_rsbb_msgs::BenchmarkState_State_GOAL_TX:							cout << "GOAL_TX       "; 	break;
+		case roah_rsbb_msgs::BenchmarkState_State_WAITING_RESULT:					cout << "WAITING_RESULT";	break;
+		case roah_rsbb_msgs::BenchmarkState_State_STOP:								cout << "STOP          "; 	break;
+		default:																	cout << state_;				break;
 		}
 
 		cout << "\tR  ";
 		switch (printStates_robot_state_) {
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_PREPARING:			cout << "PREPARING"; 				break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_WAITING_GOAL:		cout << "WAITING_GOAL"; 			break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_EXECUTING:			cout << "EXECUTING";				break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_RESULT_TX:			cout << "RESULT_TX"; 				break;
-		case roah_rsbb_msgs::RobotState_State::RobotState_State_STOP:				cout << "STOP"; 					break;
-		default:																	cout << state_;						break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_PREPARING:			cout << "PREPARING"; 	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_WAITING_GOAL:		cout << "WAITING_GOAL"; break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_EXECUTING:			cout << "EXECUTING";	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_RESULT_TX:			cout << "RESULT_TX"; 	break;
+		case roah_rsbb_msgs::RobotState_State::RobotState_State_STOP:				cout << "STOP"; 		break;
+		default:																	cout << state_;			break;
 		}
 
 		cout << endl;

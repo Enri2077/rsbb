@@ -30,6 +30,21 @@
     </qtgui>
   </class>
 
+  <class name="rqt_roah_rsbb/BenchmarkErrorsAndWarningMessages" type="rqt_roah_rsbb::BenchmarkErrorsAndWarningMessages" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      RoAH RSBB benchmark errors and warning messages GUI.
+    </description>
+    <qtgui>
+      <group>
+        <label>RoAH RSBB</label>
+        <icon type="theme">utilities-system-monitor</icon>
+      </group>
+      <label>Errors and Warning Messages</label>
+      <icon type="theme">utilities-system-monitor</icon>
+      <statustip>Shows errors and warning messages during the execution of the benchmarks</statustip>
+    </qtgui>
+  </class>
+  
   <class name="rqt_roah_rsbb/CoreStatus" type="rqt_roah_rsbb::CoreStatus" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       RoAH RSBB core status display.
