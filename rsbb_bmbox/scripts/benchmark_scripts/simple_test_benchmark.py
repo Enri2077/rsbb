@@ -19,7 +19,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 	
 	def execute(self):
 		
-		BENCHMARK_RUNS = 2
+		N = 2
 		i = 1
 		execution_time = rospy.Duration(0.0)
 		
@@ -61,9 +61,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 				return
 		
 		
-		while self.is_benchmark_running() and (i <= BENCHMARK_RUNS):
-			
-			now = rospy.Time.now()
+		while self.is_benchmark_running() and i <= N:
 			
 			##########################################
 			#                 GOAL i                 #

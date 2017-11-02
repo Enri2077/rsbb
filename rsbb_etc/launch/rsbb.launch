@@ -5,6 +5,7 @@
     <node name="rsbb_bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" output="screen" respawn="true" >
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
       <rosparam file="$(find rsbb_etc)/config/benchmarks_description.yaml" command="load" />
+      <param name="resources_directory" type="string" value="$(find rsbb_etc)/"/>
       <param name="benchmark_configs_directory" type="string" value="$(find rsbb_bmbox)/scripts/benchmark_configs/"/>
     </node>
     

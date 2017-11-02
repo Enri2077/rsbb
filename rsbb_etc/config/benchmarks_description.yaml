@@ -15,8 +15,8 @@ benchmarks_description:
       - { type: uint, desc: "The robot hits people or the furniture." }
       - { type: uint, desc: "The robot damages the test bed." }
   record_topics:
-    - "/rsbb/actor/pose"
-    - "/rsbb/actor/pose2d"
+    - "/rsbb/actor_markerset/pose"
+    - "/rsbb/actor_markerset/pose2d"
 
 - code: "HGTKMH"
   desc: "Task Benchmark 1: Getting to know my home"
@@ -69,29 +69,6 @@ benchmarks_description:
 
 - code: "HCFGAC"
   desc: "Task Benchmark 3: Catering for Granny Annie's Comfort"
-  scripted: true
-  multiple_robots: false
-  commands_devices: true
-  order: -1
-  timeout: 600.000
-  scoring:
-    - Achievements:
-      - { type: bool, desc: "The robot enters the room where Granny Annie is waiting." }
-      - { type: bool, desc: "The robot understands Annie’s command(s)." }
-      - { type: uint, desc: "The robot operates correctly the right device(s)." }
-      - { type: uint, desc: "The robot finds the right object(s)." }
-      - { type: uint, desc: "The robot brings to Annie the right object(s)." }
-    - Penalized Behaviors:
-      - { type: uint, desc: "The robot bumps into the furniture." }
-      - { type: uint, desc: "The robot drops an object." }
-      - { type: uint, desc: "The robot stops working." }
-    - Disqualifying Behaviors:
-      - { type: uint, desc: "The robot hits Annie or another person in the environment." }
-      - { type: uint, desc: "The robot damages or destroys the objects requested to manipulate." }
-      - { type: uint, desc: "The robot damages the test bed." }
-
-- code: "HCFGAC2"
-  desc: "Task Benchmark 3: Catering for Granny Annie's Comfort"
   scripted: false
   multiple_robots: false
   commands_devices: true
@@ -132,7 +109,7 @@ benchmarks_description:
   scripted: true
   multiple_robots: false
   commands_devices: false
-  order: 6
+  order: -2
   default_goal_timeout: 120.000
   global_timeout: 600.0
   scoring:
@@ -142,10 +119,10 @@ benchmarks_description:
       - { type: uint, desc: "The robot hits people or the furniture." }
       - { type: uint, desc: "The robot damages the test bed." }
   record_topics:
-    - "/rsbb/robot/pose"
-    - "/rsbb/robot/pose2d"
-    - "/rsbb/actor/pose"
-    - "/rsbb/actor/pose2d"
+    - "/rsbb/robot_markerset/pose"
+    - "/rsbb/robot_markerset/pose2d"
+    - "/rsbb/actor_markerset/pose"
+    - "/rsbb/actor_markerset/pose2d"
 
 - code: "HSUF"
   desc: "Functionality Benchmark 3: Speech Understanding Functionality"
