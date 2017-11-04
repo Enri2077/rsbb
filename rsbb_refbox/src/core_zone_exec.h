@@ -953,9 +953,13 @@ public:
 	void check_status_timer_callback(const TimerEvent& = TimerEvent()) {
 		Time now = Time::now();
 
-		if(now - last_bmbox_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )) ROS_WARN("bmbox status TIMEOUT!");
+		if(last_bmbox_status_.header.stamp > Time(0) && now - last_bmbox_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )){
+			ROS_WARN("bmbox status timeout! (last status received %f seconds ago)", (now - last_bmbox_status_.header.stamp).toSec());
+		}
 
-		if(now - last_record_server_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )) ROS_WARN("record server status TIMEOUT!");
+		if(last_record_server_status_.header.stamp > Time(0) && now - last_record_server_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )){
+			ROS_WARN("record server status timeout! (last status received %f seconds ago)", (now - last_record_server_status_.header.stamp).toSec());
+		}
 
 	}
 
@@ -981,6 +985,8 @@ public:
 		}
 
 		if(refbox_state_.benchmark_state != RefBoxState::END){
+
+			set_benchmark_state(RefBoxState::STOP);
 
 			StopBenchmark stop_benchmark_request;
 			stop_benchmark_request.request.refbox_state = refbox_state_;

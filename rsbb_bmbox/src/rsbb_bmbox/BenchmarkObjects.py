@@ -131,7 +131,11 @@ class RefBoxComm:
 	
 	
 	def __start_benchmark_callback(self, request):
-		if not self.check_preconditions(bmbox_states=[BmBoxState.WAITING_CLIENT], log_function = rospy.logerr):
+		
+		if not self.is_benchmark_running():
+			rospy.loginfo("start_benchmark_callback: benchmark not running")
+		
+		if not self.check_preconditions(bmbox_states=[BmBoxState.WAITING_CLIENT, BmBoxState.END], log_function = rospy.logerr):
 			rospy.logwarn("start_benchmark_callback: inconsistent states or benchmark not running")
 		
 		self.__update_refbox_state(request.refbox_state)
@@ -146,12 +150,15 @@ class RefBoxComm:
 #			print "TEST __goal_started_callback: return GoalStartedResponse(False)"
 #			return GoalStartedResponse(False)
 
+		if not self.is_benchmark_running():
+			rospy.loginfo("goal_started_callback: benchmark not running")
+		
 		if self.__current_goal == None:
 			rospy.logerr("goal_started_callback: cannot accept goal execution started event. No goal execution is pending")
 			self.__update_refbox_state(request.refbox_state)
 			return GoalStartedResponse(False)
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL], log_function = rospy.logerr):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL, BmBoxState.END], log_function = rospy.logerr):
 			rospy.logwarn("goal_started_callback: inconsistent states or benchmark not running")
 		
 		self.__update_refbox_state(request.refbox_state)
@@ -165,7 +172,10 @@ class RefBoxComm:
 #			self.tmp += 1
 #			print "TEST __goal_complete_callback (GLOBAL_TIMEOUT): return GoalCompleteResponse(False)"
 #			return GoalCompleteResponse(False)
-
+		
+		if not self.is_benchmark_running():
+			rospy.loginfo("goal_complete_callback: benchmark not running")
+		
 		if self.__current_goal == None:
 			rospy.logerr("goal_complete_callback: cannot accept goal complete event. No goal execution is pending")
 			self.__update_refbox_state(request.refbox_state)
@@ -176,7 +186,7 @@ class RefBoxComm:
 			else:
 				self.__current_goal.set_result_string(request.goal_result)
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT], log_function = rospy.logerr):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT, BmBoxState.END], log_function = rospy.logerr):
 			rospy.logwarn("goal_complete_callback: inconsistent states or benchmark not running")
 		
 		self.__update_refbox_state(request.refbox_state)
@@ -185,22 +195,11 @@ class RefBoxComm:
 	
 	def __referee_score_callback(self, request):
 		
-		### TEST
-#		if self.tmp < 5 and request.refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT:
-#			self.tmp += 1
-#			print "TEST __referee_score_callback: return RefereeScoreResponse(False)"
-#			return RefereeScoreResponse(False)
-		
-#		if not self.check_preconditions(bmbox_states=[BmBoxState.TRANSMITTING_GOAL, BmBoxState.EXECUTING_GOAL, BmBoxState.WAITING_RESULT], log_function = rospy.logerr):
-#			rospy.logwarn("goal_complete_callback: inconsistent states or benchmark not running")
-		
 		try:
 			self.__current_referee_score = yaml.load(request.score)
 			self.save_and_publish_score()
 		except yaml.YAMLError as e:
 			rospy.logerr("referee_score_callback: YAMLError while parsing refere score yaml string\n%s"%e)
-		
-#		print "referee_score_callback:\n", self.__current_referee_score
 		
 		return RefereeScoreResponse(True)
 	
@@ -212,6 +211,9 @@ class RefBoxComm:
 #			print "TEST __manual_operation_complete_callback: return ManualOperationCompleteResponse(False)"
 #			return ManualOperationCompleteResponse(False)
 		
+		if not self.is_benchmark_running():
+			rospy.loginfo("manual_operation_complete_callback: benchmark not running")
+		
 		if self.__current_manual_operation == None:
 			rospy.logerr("manual_operation_complete_callback: cannot accept manual operation result. No manual operation is pending")
 			self.__update_refbox_state(request.refbox_state)
@@ -219,7 +221,7 @@ class RefBoxComm:
 		else:
 			self.__current_manual_operation.set_result(request.manual_operation_result)
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.WAITING_MANUAL_OPERATION], log_function = rospy.logerr):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.WAITING_MANUAL_OPERATION, BmBoxState.END], log_function = rospy.logerr):
 			rospy.logwarn("manual_operation_complete_callback: inconsistent states or benchmark not running")
 		
 		self.__update_refbox_state(request.refbox_state)
@@ -238,7 +240,10 @@ class RefBoxComm:
 	def _wait_refbox_connection(self):
 		rospy.logdebug("RefBoxComm._wait_refbox_connection()")
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.START], log_function = rospy.logerr):
+		if not self.is_benchmark_running():
+			rospy.loginfo("wait_refbox_connection: benchmark not running")
+		
+		if not self.check_preconditions(bmbox_states=[BmBoxState.START, BmBoxState.END], log_function = rospy.logerr):
 			rospy.logerr("_wait_refbox_connection: can not execute request")
 			return
 		
@@ -259,11 +264,15 @@ class RefBoxComm:
 			rospy.logerr("request_manual_operation: not isinstance(manual_operation_object, ManualOperationObject)")
 			return
 		
+		if not self.is_benchmark_running():
+			rospy.loginfo("request_manual_operation: benchmark not running")
+			return
+		
 		if self.__current_manual_operation != None:
 			rospy.logerr("request_manual_operation: another manual operation request is pending")
 			return
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.READY], manual_operation_states=[RefBoxState.READY]):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.READY, BmBoxState.END], manual_operation_states=[RefBoxState.READY]):
 			rospy.loginfo("request_manual_operation: can not execute request")
 			return
 		
@@ -304,12 +313,15 @@ class RefBoxComm:
 			rospy.logerr("request_goal: not isinstance(goal_object, GoalObject)")
 			return
 		
+		if not self.is_benchmark_running():
+			rospy.loginfo("request_goal: benchmark not running")
+			return
+		
 		if self.__current_goal != None:
 			rospy.logerr("request_goal: another goal request is pending")
 			return
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.READY], goal_execution_states=[RefBoxState.READY]):
-#		if not self.check_preconditions(bmbox_states=[BmBoxState.READY], goal_execution_states=[RefBoxState.READY, RefBoxState.GOAL_TIMEOUT]):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.READY, BmBoxState.END], goal_execution_states=[RefBoxState.READY]):
 			rospy.loginfo("request_goal: can not execute request")
 			return
 		
@@ -333,11 +345,9 @@ class RefBoxComm:
 				
 				# should return immediately
 				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.READY, to_states = [RefBoxState.TRANSMITTING_GOAL])
-#				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.READY, to_states = [RefBoxState.TRANSMITTING_GOAL, RefBoxState.GOAL_TIMEOUT])
 				
 				# woken by goal_started_callback RefBox state update
 				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.TRANSMITTING_GOAL, to_states = [RefBoxState.EXECUTING_GOAL, RefBoxState.READY])
-#				self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.TRANSMITTING_GOAL, to_states = [RefBoxState.EXECUTING_GOAL, RefBoxState.GOAL_TIMEOUT])
 			
 			else:
 				rospy.logerr("request_goal: Goal request FAILED (refbox refused to execute the goal)")
@@ -354,18 +364,20 @@ class RefBoxComm:
 	def wait_goal_result(self):
 		rospy.logdebug("RefBoxComm.wait_goal_result()")
 		
+		if not self.is_benchmark_running():
+			rospy.loginfo("wait_goal_result: benchmark not running")
+			return
+		
 		if self.__current_goal == None:
 			rospy.logerr("wait_goal_result: no goal request is pending")
 			return
 		
-		if not self.check_preconditions(bmbox_states=[BmBoxState.EXECUTING_GOAL], goal_execution_states=[RefBoxState.EXECUTING_GOAL, RefBoxState.READY]):
-#		if not self.check_preconditions(bmbox_states=[BmBoxState.EXECUTING_GOAL], goal_execution_states=[RefBoxState.EXECUTING_GOAL, RefBoxState.GOAL_TIMEOUT]):
+		if not self.check_preconditions(bmbox_states=[BmBoxState.EXECUTING_GOAL, BmBoxState.END], goal_execution_states=[RefBoxState.EXECUTING_GOAL, RefBoxState.READY]):
 			rospy.loginfo("wait_goal_result: can not execute request")
 			return
 		
 		self.__fsm.update(BmBoxState.WAITING_RESULT)
 		self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.EXECUTING_GOAL, to_states = [RefBoxState.READY])
-#		self.__refbox_state_observer.wait_goal_execution_state_transition(from_state = RefBoxState.EXECUTING_GOAL, to_states = [RefBoxState.READY, RefBoxState.GOAL_TIMEOUT])
 		
 		### normal post conditions:
 		self.__fsm.update(BmBoxState.READY)
@@ -378,8 +390,12 @@ class RefBoxComm:
 		
 		self.save_and_publish_score()
 		
+		if not self.is_benchmark_running():
+			rospy.loginfo("end_benchmark: benchmark already not running")
+			return
+		
 		if not self.check_preconditions(\
-		       bmbox_states=[BmBoxState.READY], \
+		       bmbox_states=[BmBoxState.READY, BmBoxState.END], \
 		       benchmark_states=[RefBoxState.EXECUTING_BENCHMARK], \
 		       goal_execution_states=[RefBoxState.READY], \
 #		       goal_execution_states=[RefBoxState.READY, RefBoxState.GOAL_TIMEOUT], \
@@ -406,7 +422,7 @@ class RefBoxComm:
 				rospy.logerr("end_benchmark: request FAILED (refbox refused to end the benchmark)")
 		
 		except rospy.ServiceException, e:
-			rospy.logerr("Service call failed: %s" % (e))
+			rospy.logerr("end_benchmark: service call failed: %s" % (e))
 		
 		
 		### normal post conditions:
@@ -418,13 +434,15 @@ class RefBoxComm:
 		self.save_and_publish_score()
 		
 		if self.can_terminate_benchmark():
-			rospy.loginfo("calling signal_shutdown(\"Benchmark terminated\")")
 			
+			rospy.loginfo("calling signal_shutdown(\"Benchmark terminated\")")
 			rospy.signal_shutdown("Benchmark terminated")
 			self.__fsm.notify_condition_variables()
 			self.__refbox_state_observer.notify_condition_variables()
 		
 		self.__fsm.update(BmBoxState.END)
+		self.__fsm.notify_condition_variables()
+		self.__refbox_state_observer.notify_condition_variables()
 
 	
 	
@@ -433,6 +451,9 @@ class RefBoxComm:
 		return self.__fsm.state() in [BmBoxState.START, BmBoxState.WAITING_CLIENT]
 	
 	def check_preconditions(self, bmbox_states = None, benchmark_states = None, goal_execution_states = None, manual_operation_states = None, log_function = rospy.logwarn):
+		
+#		if not self.is_benchmark_running():
+#			return False
 		
 		if not (bmbox_states == None or self.__fsm.state() in bmbox_states):
 			log_function("check_preconditions: inconsistent bmbox states. expected [%s], current state [%s]", self._bmbox_states_to_str(bmbox_states), self._bmbox_state_to_str(self.__fsm.state()) )
