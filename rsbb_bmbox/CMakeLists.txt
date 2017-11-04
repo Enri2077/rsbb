@@ -68,5 +68,5 @@ install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
-roslaunch_add_file_check(launch)
+#roslaunch_add_file_check(launch)
 

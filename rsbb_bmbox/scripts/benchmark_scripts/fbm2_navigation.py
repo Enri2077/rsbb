@@ -1,12 +1,54 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rospy, yaml, tf, math
+import rospy, yaml, tf
+from math import sin, cos, atan2, fabs, sqrt
 from geometry_msgs.msg import Pose2D
 from os import path
 
 from rsbb_bmbox.BenchmarkObjects import BaseBenchmarkObject, GoalObject, ManualOperationObject
+#import rsbb_bmbox.BenchmarkUtils
 
+def Pose2D_from_tf_concatenation(benchmark_object, new_target_frame, translation, orientation, original_target_frame, source_frame, tf_broadcaster, tf_listener, max_failed_attempts=None, timeout=1.0):
+	
+	attempts = 0
+	pose_acquired = False
+	pose2D = None
+	
+	while not pose_acquired and benchmark_object.is_benchmark_running():
+		if max_failed_attempts != None and attempts >= max_failed_attempts:
+			break
+		
+		try:
+			now = rospy.Time.now()
+			
+			# testbed_origin_to_marker transform
+			tf_listener.waitForTransform(source_frame, original_target_frame, now, rospy.Duration(timeout))
+#			marker_transform = tf_listener.lookupTransform(source_frame, original_target_frame, now)
+			
+			# broadcast the robot frame relative to the marker
+			tf_broadcaster.sendTransform(translation, orientation, now, new_target_frame, original_target_frame)
+			
+			# receive the robot transform and compute the robot pose
+			tf_listener.waitForTransform(source_frame, new_target_frame, now, rospy.Duration(timeout))
+			( (x, y, _), q ) = tf_listener.lookupTransform(source_frame, new_target_frame, rospy.Time(0))
+			(_, _, theta) = tf.transformations.euler_from_quaternion(q)
+			
+			pose2D = Pose2D(x, y, theta)
+#			target_pose = Pose2D(*waypoints[i])
+#			
+#			self.score["segment_%i"%(i+1)]["target_pose"] = yaml.dump(target_pose)
+#			self.score["segment_%i"%(i+1)]["robot_pose"]  = yaml.dump(robot_pose)
+#			
+			pose_acquired = True
+		
+		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException, tf.Exception), Argument:
+			attempts += 1
+			pose_acquired = False
+			rospy.logwarn("Robot pose could not be acquired")
+			rospy.loginfo(Argument)
+	
+	return pose2D
 
 
 class BenchmarkObject (BaseBenchmarkObject):
@@ -102,51 +144,32 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			
 			# Collect the target and robot poses (using tf)
-			robot_pose_acquired = False
-			while not robot_pose_acquired and self.is_benchmark_running():
-				try:
-					now = rospy.Time.now()
-					
-					# testbed_origin_to_marker transform
-					tf_listener.waitForTransform("/testbed_origin", "/robot_markerset", now, rospy.Duration(1.0))
-					marker_transform = tf_listener.lookupTransform("/testbed_origin", "/robot_markerset", now)
-					
-					# broadcast the robot frame relative to the marker
-					tf_broadcaster.sendTransform(marker_to_robot_transform[0], marker_to_robot_transform[1], now, "/robot", "/robot_markerset")
-					
-					# receive the robot transform and compute the robot pose
-					tf_listener.waitForTransform("/testbed_origin", "/robot", now, rospy.Duration(1.0))
-					( (robot_x, robot_y, _), robot_rotation ) = tf_listener.lookupTransform("/testbed_origin", "/robot", rospy.Time(0))
-					(_, _, robot_theta) = tf.transformations.euler_from_quaternion(robot_rotation)
-					
-					robot_pose = Pose2D(robot_x, robot_y, robot_theta)
-					target_pose = Pose2D(*waypoints[i])
-					
-					self.score["segment_%i"%(i+1)]["target_pose"] = yaml.dump(target_pose)
-					self.score["segment_%i"%(i+1)]["robot_pose"]  = yaml.dump(robot_pose)
-					
-					robot_pose_acquired = True
-				
-				except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException, tf.Exception), Argument: # TODO IMPORTANT: tf.Exception when there is no optitrack. To test with optitrack
-					robot_pose_acquired = False
-					rospy.logwarn("Robot pose could not be acquired")
-					rospy.logwarn(Argument)
+			target_pose = Pose2D(*waypoints[i])
+			robot_pose = None
+			
+			robot_pose = Pose2D_from_tf_concatenation(self, "/robot", marker_to_robot_transform[0], marker_to_robot_transform[1], "/robot_markerset", "/testbed_origin", tf_broadcaster, tf_listener)
+			
+			self.score["segment_%i"%(i+1)]["target_pose"] = yaml.dump(target_pose)
+			self.score["segment_%i"%(i+1)]["robot_pose"]  = yaml.dump(robot_pose)
+
+			robot_pose_acquired = robot_pose != None
+			print "\n\n\n\n\n\nrobot_pose:\n", robot_pose, "\n\n\n\n\n\n"
 			
 			if robot_pose_acquired:
 				# Evaluate position and orientation error between target pose (tp) and robot pose (rp)
 				rp = robot_pose	# robot position
 				tp = target_pose # target position
 			
-				d_error = math.sqrt( (rp.x-tp.x)**2 + (rp.y-tp.y)**2 )
+				d_error = sqrt( (rp.x-tp.x)**2 + (rp.y-tp.y)**2 )
 				sum_d = sum_d + d_error
 			
-				sin_error = math.sin(math.fabs(rp.theta - tp.theta)) # TODO: ? fabs(sin(fabs(rp.theta - tp.theta)))
+				sin_error = sin(fabs(rp.theta - tp.theta))
 				sum_sin += sin_error
-				cos_error = math.cos(math.fabs(rp.theta - tp.theta))
+				cos_error = cos(fabs(rp.theta - tp.theta))
 				sum_cos += cos_error
 			
 				self.score["segment_%i"%(i+1)]["distance_error"] = d_error
-				self.score["segment_%i"%(i+1)]["orientation_error"] = math.atan2(sin_error, cos_error)
+				self.score["segment_%i"%(i+1)]["orientation_error"] = atan2(fabs(sin_error), cos_error)
 			
 				rospy.loginfo("\n\n - segment_time: %s\n - dinstance_error: %s\n - orientation_error: %s" % (segment_time.to_sec(), self.score["segment_%i"%(i+1)]["distance_error"], self.score["segment_%i"%(i+1)]["orientation_error"]))
 			
@@ -172,7 +195,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 		# Evaluate final score
 		if reached_waypoints > 0:
 			position_accuracy = sum_d / reached_waypoints
-			orientation_accuracy = math.atan2(sum_sin, sum_cos)
+			orientation_accuracy = atan2(fabs(sum_sin), sum_cos)
 		else:
 			position_accuracy = None
 			orientation_accuracy = None

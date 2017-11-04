@@ -2,17 +2,17 @@
   
   <group ns="rsbb">
     
-    <node name="rsbb_bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" output="screen" respawn="true" >
+    <node name="bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" output="screen" respawn="true" >
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
       <rosparam file="$(find rsbb_etc)/config/benchmarks_description.yaml" command="load" />
       <param name="benchmark_configs_directory" type="string" value="$(find rsbb_bmbox)/scripts/benchmark_configs/"/>
     </node>
     
-    <node name="rsbb_record_server" pkg="rsbb_record_server" type="rsbb_record_server" output="screen" respawn="true">
+    <node name="record_server" pkg="rsbb_record_server" type="rsbb_record_server" output="screen" respawn="true">
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
     </node>
     
-    <node pkg="roah_rsbb" type="sounds" name="roah_rsbb_sounds" respawn="true">
+    <node name="roah_rsbb_sounds" pkg="roah_rsbb" type="sounds" respawn="true">
       <param name="bell_ring_command" type="string" value="mplayer $(find rsbb_etc)/audio/bell.mp3"/>
       <param name="timeout_ring_command" type="string" value="mplayer $(find rsbb_etc)/audio/timeout.mp3"/>
     </node>
@@ -23,7 +23,7 @@
     </include>
     -->
     
-    <node pkg="roah_rsbb" type="core" name="roah_rsbb_core" respawn="true" output="screen">
+    <node name="refbox" pkg="roah_rsbb" type="core" respawn="true" output="screen">
       <rosparam file="$(find rsbb_etc)/config/rsbb_refbox.yaml" command="load" />
       <param name="benchmarks_file" type="string" value="$(find rsbb_etc)/config/benchmarks_description.yaml"/>
       <param name="schedule_file" type="string" value="$(find rsbb_etc)/config/schedule.yaml"/>
@@ -32,7 +32,7 @@
       <param name="log_dir" type="string" value="$(find roah_rsbb)/log"/>
     </node>
     
-    <node pkg="roah_rsbb" type="shutdown_service" name="roah_rsbb_core_shutdown" required="true"/>
+    <node name="roah_rsbb_core_shutdown" pkg="roah_rsbb" type="shutdown_service" required="true"/>
     
   </group>
   

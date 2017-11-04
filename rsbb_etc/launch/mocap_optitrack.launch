@@ -16,7 +16,8 @@
 
 		<node name="mocap_node"
 			type="mocap_node"
-			pkg="mocap_optitrack" 
+			pkg="rsbb_mocap_optitrack"
+			output="screen"
 			respawn="false"
 			launch-prefix=""
 			required="true">

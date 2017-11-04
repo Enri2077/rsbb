@@ -15,7 +15,7 @@
 
 		<node name="mocap_node"
 			type="mocap_node"
-			pkg="mocap_optitrack" 
+			pkg="rsbb_mocap_optitrack" 
 			respawn="false"
 			launch-prefix=""
 			required="true">
@@ -25,14 +25,14 @@
 		<node pkg="rosbag"
 			type="record"
 			name="log_mocap"
-			args="record -o /home/enrico/logs/log_mocap
+			args="record -o /home/erl/logs/log_mocap
 				--split --duration=1h
 				/rsbb/map
 				/rsbb/map_metadata
-				/rsbb/robot/pose
-				/rsbb/robot/pose2d
-				/rsbb/actor/pose
-				/rsbb/actor/pose2d
+				/rsbb/robot_markerset/pose
+				/rsbb/robot_markerset/pose2d
+				/rsbb/actor_markerset/pose
+				/rsbb/actor_markerset/pose2d
 				/rsbb/table_origin/pose
 				/rsbb/table_origin/pose2d
 				/rsbb/positioner_origin/pose
