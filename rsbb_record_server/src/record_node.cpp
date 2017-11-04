@@ -39,6 +39,7 @@ RecordRequest current_record_request_;
 fs::path current_record_dir_path_;
 ros::Time last_request_message_;
 bool recording_ = false;
+bool requested_to_record_ = false;
 bool requested_to_stop_ = false;
 
 bool not_equals(RecordRequest a, RecordRequest b) {
@@ -175,15 +176,17 @@ void timer_callback(const ros::TimerEvent&) {
 
 void record_request_callback(RecordRequest::ConstPtr record_request_message) {
 
-	if (!recording_) {
+//	if (!recording_) {
+	if (!requested_to_record_) {
 		// if NOT recording before
 
 		current_record_request_ = *record_request_message;
 
 		if (current_record_request_.record) {
-			ROS_INFO_STREAM("starting to record:" << endl << current_record_request_);
+			ROS_INFO_STREAM("requested to start recording:" << endl << current_record_request_);
 			last_request_message_ = ros::Time::now();
-			recording_ = true;
+//			recording_ = true;
+			requested_to_record_ = true;
 		}
 
 	} else {
@@ -225,8 +228,8 @@ void record_request_callback(RecordRequest::ConstPtr record_request_message) {
 bool stop_record_callback(StopRecordRequest::Request& req, StopRecordRequest::Response& res) {
 
 	ROS_INFO_STREAM("requested to stop recording");
-	res.result = recording_;
-	if (recording_)
+	res.result = requested_to_record_;
+	if (requested_to_record_)
 		requested_to_stop_ = true;
 
 	return true;
@@ -280,12 +283,17 @@ int main(int argc, char** argv) {
 
 	// wait until a RecordRequest message is received
 	ROS_INFO_STREAM("Waiting until a record request is received");
-	while (!recording_ && ros::ok()) {
+	while (!requested_to_stop_ && !requested_to_record_ && ros::ok()) {
 		ros::spinOnce();
 		r.sleep();
 	}
 
-	if (!recording_ || !ros::ok())
+	if(requested_to_stop_){
+		publish_system_status("restarting");
+		restart_node();
+	}
+
+	if (!requested_to_record_ || !ros::ok())
 		return 0;
 
 	ROS_INFO_STREAM("Finished waiting");
@@ -375,6 +383,9 @@ int main(int argc, char** argv) {
 	ROS_INFO_STREAM("options.topics:");
 	for (auto t : options.topics)
 		ROS_INFO_STREAM("\t" << t);
+
+	recording_ = true;
+	ROS_INFO_STREAM("Starting to record");
 
 	// run the recorder node (rosbag record wrapper)
 	recorder_ = new Record(nh, options);
