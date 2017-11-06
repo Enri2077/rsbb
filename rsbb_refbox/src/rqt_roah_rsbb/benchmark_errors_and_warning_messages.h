@@ -50,7 +50,14 @@ private:
 	ros::Subscriber rosout_subscriber_;
 	ros::NodeHandle nh_;
 
-	int next_row_index_ = 0;
+	bool clear_ = true;
+
+	int last_message_repetitions_ = 1;
+
+	QString last_message_level_;
+	QString last_message_name_;
+	QString last_message_string_;
+
 
 private slots:
 	void rosout_callback(const rosgraph_msgs::Log::ConstPtr& m);

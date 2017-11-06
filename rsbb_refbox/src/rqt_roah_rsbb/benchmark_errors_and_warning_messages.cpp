@@ -70,40 +70,62 @@ void BenchmarkErrorsAndWarningMessages::rosout_callback(const rosgraph_msgs::Log
 	Time now = Time::now();
 
 	auto level = m->level;
-	string name = m->name;
-	string msg = m->msg;
 
 	if (level & (rosgraph_msgs::Log::ERROR | rosgraph_msgs::Log::WARN | rosgraph_msgs::Log::FATAL)) {
 
-		QColor level_color;
-		string level_string;
+		QString message_name = QString::fromStdString(m->name);
+		QString message_string = QString::fromStdString(m->msg);
+
+		QString message_string_with_repetitions;
+		QString message_level_string;
+		QColor message_level_color;
+
 		switch (level) {
 		case rosgraph_msgs::Log::WARN:
-			level_string = "WARN ";
-			level_color = Qt::yellow;
+			message_level_string = QString("WARN ");
+			message_level_color = Qt::yellow;
 			break;
 		case rosgraph_msgs::Log::ERROR:
-			level_string = "ERROR";
-			level_color = Qt::red;
+			message_level_string = QString("ERROR");
+			message_level_color = Qt::red;
 			break;
 		case rosgraph_msgs::Log::FATAL:
-			level_string = "FATAL";
-			level_color = Qt::red;
+			message_level_string = QString("FATAL");
+			message_level_color = Qt::red;
 			break;
 		}
 
-		ui_.table->setRowCount(next_row_index_ + 1);
+		if(last_message_level_ == message_level_string && last_message_name_ == message_name && last_message_string_ == message_string){
+			// note: this implies clear_ == false, but insertRow is not done to substitute the first row that is repeated
+			last_message_repetitions_++;
+			message_string_with_repetitions = QString("(x") + QString::fromStdString(to_string(last_message_repetitions_)) + QString(") ") + message_string;
+		}else{
+			last_message_repetitions_ = 1;
+			message_string_with_repetitions = message_string;
 
-		QTableWidgetItem* level_item = new QTableWidgetItem(QString::fromStdString(level_string));
-		level_item->setBackgroundColor(level_color);
+			if(!clear_){
+				// insert a new row if the message is not a repetition of the last and if the table is not clear
+				ui_.table->insertRow(0);
+			}
+		}
 
-		ui_.table->setItem(next_row_index_, 0, level_item);
-		ui_.table->setItem(next_row_index_, 1, new QTableWidgetItem(QString::fromStdString(name)));
-		ui_.table->setItem(next_row_index_, 2, new QTableWidgetItem(QString::fromStdString(msg)));
+		clear_ = false;
 
-		ui_.table->scrollToBottom();
+		last_message_level_ = message_level_string;
+		last_message_name_ = message_name;
+		last_message_string_ = message_string;
 
-		next_row_index_++; // = ui_.table->rowCount();
+		QTableWidgetItem* level_item = new QTableWidgetItem(message_level_string);
+		QTableWidgetItem* name_item  = new QTableWidgetItem(message_name);
+		QTableWidgetItem* msg_item  = new QTableWidgetItem(message_string_with_repetitions);
+
+		level_item->setBackgroundColor(message_level_color);
+
+		ui_.table->setItem(0, 0, level_item);
+		ui_.table->setItem(0, 1, name_item);
+		ui_.table->setItem(0, 2, msg_item);
+
+		ui_.table->verticalScrollBar()->setSliderPosition(ui_.table->verticalScrollBar()->minimum());
 
 	}
 }
@@ -115,7 +137,14 @@ void BenchmarkErrorsAndWarningMessages::clear() {
 	ui_.table->setItem(0, 1, new QTableWidgetItem(""));
 	ui_.table->setItem(0, 2, new QTableWidgetItem(QString::fromStdString("No messages to display (cleared)")));
 
-	next_row_index_ = 0;
+	clear_ = true;
+
+	last_message_repetitions_ = 1;
+
+	last_message_level_ = QString();
+	last_message_name_ = QString();
+	last_message_string_ = QString();
+
 }
 }
 
