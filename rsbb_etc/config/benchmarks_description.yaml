@@ -95,7 +95,7 @@ benchmarks_description:
   scripted: true
   multiple_robots: false
   commands_devices: false
-  order: 5
+  order: -3
   default_goal_timeout: 120.000
   global_timeout: 600.0
   record_topics:
