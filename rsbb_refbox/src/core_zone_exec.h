@@ -846,22 +846,34 @@ public:
 
 	void send_referee_score(){
 
+		cout << "BEGIN send_referee_score" << endl;
+
 		YAML::Node scoring_node;
+		cout << "YAML::Node scoring_node" << endl;
+
 		for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());
+		cout << "for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());" << endl;
 
-		YAML::Emitter scoring_node_os;
-		scoring_node_os << scoring_node;
+		cout << "scoring_node.size(): " << scoring_node.size() << endl;
 
-		RefereeScore referee_score;
-		referee_score.request.score = scoring_node_os.c_str();//.as<string>();
-		referee_score.request.refbox_state = refbox_state_;
+		if(scoring_node.size()){
+			YAML::Emitter scoring_node_os;
+			cout << "YAML::Emitter scoring_node_os" << endl;
 
-		if (referee_score_service_.call(referee_score) && referee_score.response.success){
-			ROS_INFO("Called referee_score service");
-		} else {
-			ROS_INFO("Tried to call referee_score service but not available or bmbox refused to receive referee score");
+			scoring_node_os << scoring_node;
+			cout << "scoring_node_os << scoring_node" << endl;
+
+			RefereeScore referee_score;
+			referee_score.request.score = scoring_node_os.c_str();//.as<string>();
+			referee_score.request.refbox_state = refbox_state_;
+			cout << "referee_score.request.refbox_state = refbox_state_;" << endl;
+
+			if (referee_score_service_.call(referee_score) && referee_score.response.success){
+				ROS_INFO("Called referee_score service");
+			} else {
+				ROS_INFO("Tried to call referee_score service but not available or bmbox refused to receive referee score");
+			}
 		}
-
 	}
 
 	void fill_2(Time const& now, roah_rsbb::ZoneState& zone){}
