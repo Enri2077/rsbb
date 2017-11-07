@@ -24,7 +24,6 @@ def Pose2D_from_tf_concatenation(benchmark_object, new_target_frame, translation
 			
 			# testbed_origin_to_marker transform
 			tf_listener.waitForTransform(source_frame, original_target_frame, now, rospy.Duration(timeout))
-#			marker_transform = tf_listener.lookupTransform(source_frame, original_target_frame, now)
 			
 			# broadcast the robot frame relative to the marker
 			tf_broadcaster.sendTransform(translation, orientation, now, new_target_frame, original_target_frame)
@@ -35,17 +34,12 @@ def Pose2D_from_tf_concatenation(benchmark_object, new_target_frame, translation
 			(_, _, theta) = tf.transformations.euler_from_quaternion(q)
 			
 			pose2D = Pose2D(x, y, theta)
-#			target_pose = Pose2D(*waypoints[i])
-#			
-#			self.score["segment_%i"%(i+1)]["target_pose"] = yaml.dump(target_pose)
-#			self.score["segment_%i"%(i+1)]["robot_pose"]  = yaml.dump(robot_pose)
-#			
 			pose_acquired = True
 		
 		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException, tf.Exception), Argument:
 			attempts += 1
 			pose_acquired = False
-			rospy.logwarn("Robot pose could not be acquired")
+			rospy.logwarn("Mocap pose could not be acquired")
 			rospy.loginfo(Argument)
 	
 	return pose2D
