@@ -12,6 +12,13 @@ git pull
 git submodule update --init
 ```
 
+*Temporary* virtual machine to test the rsbb: https://drive.google.com/file/d/1m_EOQ8Gdw1TNnct_1Vt4N5xH3noOxD_Z/view?usp=sharing
+username: erl
+password: benchmarking
+to launch the rsbb software, open a terminal (ctrl+alt+t) and insert the following command:
+```
+roslaunch rsbb_etc rsbb.launch
+```
 
 ## Dependencies
 
