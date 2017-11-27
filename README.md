@@ -44,9 +44,9 @@ roslaunch rsbb_etc rsbb.launch
 
 Notice that the the virtual machine is configured to connect to the ethernet interface with a dinamyc IP (DHCP), so to test a robot against the virtual RSBB it is necessary to set the parameter `rsbb_host` in the configuration of the robots to the IP assigned to the interface of the virtual machine.
 This IP can be found by opening a terminal (ctrl+alt+t) and executing the command:
-```
+```bash
 hostname -I
-``` 
+```
 The output of this command will be one IP address, or multiple IP adresses in case the virtual machine is connected to more than one network.
 In this case, use the IP of the network to which the robots are connected.
 

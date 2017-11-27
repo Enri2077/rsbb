@@ -258,6 +258,14 @@ class RefBoxComm:
 		return
 	
 	def request_manual_operation(self, manual_operation_object=None):
+		"""
+		Requests a manual operation to the refbox.
+		A manual operation consists of a request to the refbox operator to do something.
+		It is possible to prompt the refbox operator to write a response, that will be returned as a string.
+		This function is blocking, meaning the function will only return after the manual operation is complete.
+		:param ManualOperationObject manual_operation_object: The manual operation object, containing the request and the result of the of the manual operation. The result is set after the manual operation has been completed by the refbox operator.
+		"""
+		
 		rospy.logdebug("RefBoxComm.request_manual_operation()")
 		
 		if not isinstance(manual_operation_object, ManualOperationObject):
@@ -307,6 +315,13 @@ class RefBoxComm:
 		return
 	
 	def request_goal(self, goal_object):
+		"""
+		Requests the refbox to send a goal to the robot.
+		A goal consists of a request to the robot to do something and must be consistent with the data types of the communication node on the robot.
+		If the robot provides some result data, the result will be set in the goal object.
+		This function is blocking until the robot receives the goal request.
+		:param GoalObject goal_object: The goal object, containing the request, the timeout for the execution of the goal, the result provided by the robot. The result is set after the goal has been completed by the robot unless the timeout occured.
+		"""
 		rospy.logdebug("RefBoxComm.request_goal()")
 		
 		if not isinstance(goal_object, GoalObject):
@@ -362,6 +377,10 @@ class RefBoxComm:
 	
 	
 	def wait_goal_result(self):
+		"""
+		Waits until either the robot completes the goal or the goal times out.
+		This function is blocking.
+		"""
 		rospy.logdebug("RefBoxComm.wait_goal_result()")
 		
 		if not self.is_benchmark_running():
@@ -386,6 +405,10 @@ class RefBoxComm:
 	
 	
 	def end_benchmark(self):
+		"""
+		Ends the benchmark.
+		This function is non-blocking.
+		"""
 		rospy.logdebug("RefBoxComm.end_benchmark()")
 		
 		self.save_and_publish_score()
@@ -474,6 +497,10 @@ class RefBoxComm:
 		and   (manual_operation_states == None or self.__refbox_state.manual_operation_state in manual_operation_states)
 	
 	def is_benchmark_running(self):
+		"""
+		Returns true if the benchmark is running, meaning that the benchmerk has not ended. The benchmark may not be running because the refbox operator stopped the benchmark or because the benchmark's timeout (global timeout) has occured. The function also returns False if the roscore of the node executing this benchmark has received the shutdown signal.
+		This function is non-blocking.
+		"""
 		return not ( \
 		       rospy.is_shutdown() \
 		or     self.__refbox_state.benchmark_state in self.__exception_states \
@@ -482,18 +509,33 @@ class RefBoxComm:
 		or     self.__fsm.state() == BmBoxState.END )
 	
 	def is_goal_timed_out(self):
+		"""
+		This function is deprecated.
+		"""
 		rospy.logdebug("RefBoxComm.is_goal_timed_out()")
 #		return self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT
 		rospy.logwarn("is_goal_timed_out: deprecated")
 		return False
 	
 	def has_benchmark_timed_out(self):
+		"""
+		Returns true if the global timeout has occured. The global timeout is set in the configuration of the benchmark.
+		This function is non-blocking.
+		"""
 		return self.__refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT
 	
 	def has_benchmark_been_stopped(self):
+		"""
+		Returns true if the refbox operator stopped the benchmark.
+		This function is non-blocking.
+		"""
 		return self.__refbox_state.benchmark_state == RefBoxState.STOP
 	
 	def get_end_description(self):
+		"""
+		Returns a string containing the description of the reason the benchmark is not running.
+		This function is non-blocking.
+		"""
 		if   self.__refbox_state.benchmark_state == RefBoxState.END:            return 'END: benchmark ended normally'
 		elif self.__refbox_state.benchmark_state == RefBoxState.STOP:           return 'STOP: benchmark stopped by referee'
 		elif self.__refbox_state.benchmark_state == RefBoxState.EMERGENCY_STOP: return 'EMERGENCY_STOP: benchmark stopped due to emergency'
@@ -505,6 +547,10 @@ class RefBoxComm:
 		return not self.is_benchmark_running() or self.__is_waiting_to_start()
 	
 	def get_referee_score(self):
+		"""
+		Returns an object with the scoring of the refbox operator.
+		This function is non-blocking.
+		"""
 		return self.__current_referee_score
 
 
@@ -695,6 +741,9 @@ class BaseBenchmarkObject (RefBoxComm, object):
 			yaml.dump(self.__result_object, outfile, default_flow_style=False)
 	
 	def save_and_publish_score(self):
+#		"""
+#		TODO
+#		"""
 		self.__result_object['benchmark_info']['end_description'] = self.get_end_description()
 		self.__result_object['benchmark_info']['end_time'] = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__result_object['referee_score'] = self.get_referee_score()
@@ -716,9 +765,15 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	
 	def get_benchmark_run(self):
+#		"""
+#		TODO
+#		"""
 		return self.__result_object['benchmark_info']['run']
 	
 	def get_benchmark_team(self):
+#		"""
+#		TODO
+#		"""
 		return self.__result_object['benchmark_info']['team']
 
 	
