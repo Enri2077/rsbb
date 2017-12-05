@@ -18,10 +18,10 @@
       <param name="timeout_ring_command" type="string" value="mplayer $(find rsbb_etc)/audio/timeout.mp3"/>
     </node>
     
-    <!--
     <include file="$(find roah_devices)/launch/run_real.launch">
       <arg name="smartif_host" default="192.168.1.56"/>
     </include>
+    <!--
     -->
     
     <node pkg="roah_rsbb" type="core" name="roah_rsbb_core" respawn="true" output="screen">
