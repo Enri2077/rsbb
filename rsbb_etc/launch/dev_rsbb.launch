@@ -25,7 +25,7 @@
     -->
     
     <node name="refbox" pkg="roah_rsbb" type="core" respawn="true" output="screen">
-      <rosparam file="$(find rsbb_etc)/config/rsbb_refbox.yaml" command="load" />
+      <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
       <param name="benchmarks_file" type="string" value="$(find rsbb_etc)/config/benchmarks_description.yaml"/>
       <param name="schedule_file" type="string" value="$(find rsbb_etc)/config/schedule.yaml"/>
       <param name="passwords_file" type="string" value="$(find rsbb_etc)/config/passwords.yaml"/>
@@ -37,6 +37,18 @@
     
   </group>
   
+  
+  
+  <group ns="$(anon roah_rsbb_client)">
+    
+    <param name="current_zone" type="string" value="TestingTeam"/>
+    <node pkg="rqt_gui" type="rqt_gui" name="roah_rsbb_gui" respawn="true" args=" --clear-config --perspective-file $(find roah_rsbb)/roah_rsbb_new_dev.perspective" output="screen"/>
+    <node pkg="roah_rsbb" type="shutdown_service" name="roah_rsbb_shutdown" required="true"/>
+    
+  </group>
+  
+    <!--
   <include file="$(find roah_rsbb)/launch/roah_rsbb_client_dev.launch"/>
+    -->
   
 </launch>

@@ -1,5 +1,5 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-  <file>../../roah.png</file>
-</qresource>
+<RCC>
+  <qresource>
+    <file>../../../rsbb_etc/images/roah.png</file>
+  </qresource>
 </RCC>

@@ -88,15 +88,14 @@ You can run the full RSBB including the Core, the Interface and the devices node
 roslaunch rsbb_etc rsbb.launch
 ```
 
-For a test with dummy home devices use: <mark>TODO: not implemented yet</mark>
+For a test with dummy home devices use: `:warning: TODO: not implemented yet`
 ```bash
 roslaunch rsbb_etc rsbb_dummy_devices.launch rsbb_host:=192.168.1.255 --screen
 ```
 
-The `rsbb_host` parameter should be set to the `Bcast` of the interface you want to use, as reported by `ifconfig`. Do not run the RSBB in the same computer as the robot.
+The `rsbb_broadcast_address` configuration parameter should be set to the `Bcast` of the interface you want to use, as reported by `ifconfig`. Do not run the RSBB in the same computer as the robot.
 
-It may be necessary to delete the rqt cache for the new components to
-appear:
+It may be necessary to delete the rqt cache for the new components to appear:
 ```bash
 rm ~/.config/ros.org/rqt_gui.ini
 ```

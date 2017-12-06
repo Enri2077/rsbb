@@ -99,7 +99,7 @@ class CorePublicChannel: boost::noncopyable, public roah_rsbb::RosPublicChannel 
 
 public:
 	CorePublicChannel(CoreSharedState& ss) :
-			roah_rsbb::RosPublicChannel(param_direct<string>("~rsbb_host", "10.456.255.255"), param_direct<int>("~rsbb_port", 6666)), ss_(ss), beacon_timer_(
+			roah_rsbb::RosPublicChannel(param_direct<string>("~rsbb_broadcast_address", "10.0.0.255"), param_direct<int>("~rsbb_port", 6666)), ss_(ss), beacon_timer_(
 					ss_.nh.createTimer(Duration(5, 0), &CorePublicChannel::setup_transmit_beacon, this, true)) {
 		set_rsbb_beacon_callback(&CorePublicChannel::receive_rsbb_beacon, this);
 		set_robot_beacon_callback(&CorePublicChannel::receive_robot_beacon, this);

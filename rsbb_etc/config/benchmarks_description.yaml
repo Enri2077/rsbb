@@ -5,7 +5,7 @@ benchmarks_description:
   scripted: true
   multiple_robots: false
   commands_devices: false
-  order: 1
+  order: -100
   default_goal_timeout: 30.000
   global_timeout: 200.0
   scoring:

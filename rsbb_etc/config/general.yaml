@@ -1,3 +1,7 @@
+rsbb_broadcast_address: "10.2.0.255"
+rsbb_port: 6666
+generate_schedule: true
+allow_simultaneous_benchmarks: true
 base_results_directory: "~/refbox_output/"
 base_record_directory: "~/refbox_output/"
 general_record_list:

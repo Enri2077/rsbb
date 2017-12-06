@@ -42,7 +42,7 @@
       <item>
        <widget class="QLabel" name="image">
         <property name="pixmap">
-         <pixmap resource="roah_rsbb.qrc">:/roah.png</pixmap>
+         <pixmap resource="roah_rsbb.qrc">:/rsbb_etc/images/roah.png</pixmap>
         </property>
        </widget>
       </item>
