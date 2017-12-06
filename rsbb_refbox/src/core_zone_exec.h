@@ -365,6 +365,13 @@ public:
 };
 
 class ExecutingSimpleBenchmark: public ExecutingSingleRobotBenchmark {
+
+	Timer refbox_state_publish_timer_;
+
+	ServiceClient stop_record_service_client_;
+ 	Publisher record_request_publisher_;
+	RecordRequest record_request_;
+
 	void receive_robot_state_2(Time const& now, roah_rsbb_msgs::RobotState const& msg) {
 		switch (state_) {
 		case roah_rsbb_msgs::BenchmarkState_State_STOP:
@@ -433,9 +440,55 @@ class ExecutingSimpleBenchmark: public ExecutingSingleRobotBenchmark {
 		}
 	}
 
+	void terminate_benchmark() {
+		timeout_timer_.stop_pause(Time());
+		cout << "terminate_benchmark:\t\ttime_.stop_pause" << ": " << to_qstring(timeout_timer_.get_until_timeout(Time::now())).toStdString() << endl << endl;
+
+		StopRecordRequest stop_record_request;
+		if (stop_record_service_client_.call(stop_record_request)){
+			ROS_INFO("Called stop_record service");
+			if(!stop_record_request.response.result) ROS_INFO("record server refused to stop recording (probably because it was already not recording)");
+		}else{
+			ROS_ERROR("Failed to call stop_record service");
+		}
+
+		record_request_ = RecordRequest();
+		record_request_.record = false;
+		record_request_publisher_.publish(record_request_);
+
+		stop_communication();
+		end_();
+		cout << "benchmark terminated" << endl;
+
+	}
+
+	void refbox_state_publish_timer_callback(const TimerEvent& = TimerEvent()) {
+		record_request_publisher_.publish(record_request_);
+	}
+
 public:
 	ExecutingSimpleBenchmark(CoreSharedState& ss, Event const& event, boost::function<void()> end, string const& robot_name) :
-		ExecutingSingleRobotBenchmark(ss, event, end, robot_name) {
+		ExecutingSingleRobotBenchmark(ss, event, end, robot_name),
+		refbox_state_publish_timer_(ss_.nh.createTimer(Duration(0.1), &ExecutingSimpleBenchmark::refbox_state_publish_timer_callback, this)) {
+
+		try{
+			stop_record_service_client_ = ss_.nh.serviceClient<StopRecordRequestRequest>("record_server/stop_record_request");
+			record_request_publisher_ = ss_.nh.advertise<RecordRequest> ("record_server/record_request", 1, true);
+
+
+			// publish the record request for the rosbag record server
+			record_request_.record = true;
+			record_request_.benchmark_code = event_.benchmark_code;
+			record_request_.team = event_.team;
+//			record_request_.robot = "";
+			record_request_.run = event_.run;
+			record_request_.topics = event_.benchmark.record_topics;
+			record_request_publisher_.publish(record_request_);
+
+		} catch (const std::exception& exc) {
+			ROS_ERROR_STREAM("Could not advertise record services and topics");
+		}
+
 	}
 
 	void fill_2(Time const& now, roah_rsbb::ZoneState& zone) {
@@ -448,6 +501,7 @@ public:
 			zone.state += "\nWARNING: Last robot transmission received " + to_string((now - last_beacon_).toSec()) + " seconds ago";
 		}
 	}
+
 };
 
 
