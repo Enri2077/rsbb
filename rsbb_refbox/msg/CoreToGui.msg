@@ -10,7 +10,7 @@ string addr
 string port
 
 RobotInfo[] active_robots
-
+string[] benchmarking_robots
 ZoneState[] zones
 
 string bm_server_status

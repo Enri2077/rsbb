@@ -67,25 +67,64 @@ void ActiveRobots::update() {
 		return;
 	}
 
+//	ROS_INFO("benchmarking_robots");
+//	for(auto br : core_status->benchmarking_robots){
+//		ROS_INFO_STREAM(br);
+//	}
+
+
+	QColor warning_color = Qt::yellow, team_connected_color = Qt::darkCyan, none_color = Qt::white;
+
 	ui_.table->setRowCount(core_status->active_robots.size());
 
 	for (size_t r = 0; r < core_status->active_robots.size(); ++r) {
-		ui_.table->setItem(r, 0, new QTableWidgetItem(QString::fromStdString(core_status->active_robots.at(r).team)));
-		ui_.table->setItem(r, 1, new QTableWidgetItem(QString::fromStdString(core_status->active_robots.at(r).robot)));
 
 		auto skew = core_status->active_robots.at(r).skew.toSec();
-		if ((-0.1 < skew) && (skew < 0.1)) {
-			ui_.table->setItem(r, 2, new QTableWidgetItem("OK"));
-		} else {
-			ui_.table->setItem(r, 2, new QTableWidgetItem(QString::number(skew, 'f', 1)));
-		}
+		bool skew_ok = (-0.1 < skew) && (skew < 0.1);
 
 		auto beacon = (core_status->active_robots.at(r).beacon - now).toSec();
-		if ((-3 < beacon) && (beacon < 0)) {
-			ui_.table->setItem(r, 3, new QTableWidgetItem("OK"));
-		} else {
-			ui_.table->setItem(r, 3, new QTableWidgetItem(QString::number(beacon, 'f', 1)));
+		bool beacon_ok = (-3 < beacon) && (beacon < 0);
+
+		bool team_connected = std::find(core_status->benchmarking_robots.begin(), core_status->benchmarking_robots.end(), core_status->active_robots.at(r).team) != core_status->benchmarking_robots.end();
+
+		QTableWidgetItem* team_item = new QTableWidgetItem(QString::fromStdString(core_status->active_robots.at(r).team));
+		QTableWidgetItem* robot_item = new QTableWidgetItem(QString::fromStdString(core_status->active_robots.at(r).robot));
+		QTableWidgetItem* skew_item;// = new QTableWidgetItem();
+		QTableWidgetItem* beacon_item;// = new QTableWidgetItem();
+
+		QColor team_item_color = none_color, robot_item_color = none_color, skew_item_color = none_color, beacon_item_color = none_color;
+
+		if(team_connected){
+			team_item_color = team_connected_color;
+			robot_item_color = team_connected_color;
+			skew_item_color = team_connected_color;
+			beacon_item_color = team_connected_color;
 		}
+
+		if (skew_ok) {
+			skew_item = new QTableWidgetItem("OK");
+		} else {
+			skew_item = new QTableWidgetItem(QString::number(skew, 'f', 1));
+			skew_item_color = warning_color;
+		}
+
+		if (beacon_ok) {
+			beacon_item = new QTableWidgetItem("OK");
+		} else {
+			beacon_item = new QTableWidgetItem(QString::number(beacon, 'f', 1));
+			beacon_item_color = warning_color;
+		}
+
+		team_item->setBackgroundColor(team_item_color);
+		robot_item->setBackgroundColor(robot_item_color);
+		skew_item->setBackgroundColor(skew_item_color);
+		beacon_item->setBackgroundColor(beacon_item_color);
+
+		ui_.table->setItem(r, 0, team_item);
+		ui_.table->setItem(r, 1, robot_item);
+		ui_.table->setItem(r, 2, skew_item);
+		ui_.table->setItem(r, 3, beacon_item);
+
 	}
 }
 }

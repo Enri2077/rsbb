@@ -61,6 +61,12 @@ class CoreGui: boost::noncopyable {
 		msg->addr = public_channel_.host();
 		msg->port = to_string(public_channel_.port());
 		ss_.active_robots.msg(msg->active_robots);
+
+		for(auto br_pair : ss_.benchmarking_robots){
+			auto br = br_pair.first;
+			msg->benchmarking_robots.push_back(br);
+		}
+
 		zone_manager_.msg(now, msg->zones);
 
 		if(now - last_bmbox_status_.header.stamp > Duration(SYSTEM_STATUS_TIMEOUT_SECONDS )){
@@ -189,6 +195,9 @@ class CoreGui: boost::noncopyable {
 	}
 
 	bool connect_callback(roah_rsbb::Zone::Request& req, roah_rsbb::Zone::Response& res) {
+
+		// TODO check if not allow_simultaneous_benchmarks then if another is executing then cannot call zone->connect();
+
 		Zone::Ptr zone = zone_manager_.get(req.zone);
 		if (!zone) {
 			ROS_WARN_STREAM("connect_callback: Could not find zone: " << req.zone);

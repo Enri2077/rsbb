@@ -345,6 +345,16 @@ public:
 	}
 
 	roah_rsbb::ZoneState msg(Time const& now) {
+		/* TODO implement these rules in a readable and maintainable way (Note: current logic does not follow these rules)
+		 * Rules for benchmark connection:
+		 * 		if a benchmark is already connected, then it can not connect
+		 * 		if a benchmark has a large skew, then it can not connect
+		 * 		each robot can only execute one benchmark at a time
+		 * 		no more than one scripted benchmark can be connected
+		 * 		if allow_simultaneous_benchmarks==false, then either there are no more than one benchmark connected,
+		 * 			or all the benchmarks connected have multiple_robots==true.
+		 */
+
 
 		roah_rsbb::ZoneState zone;
 
