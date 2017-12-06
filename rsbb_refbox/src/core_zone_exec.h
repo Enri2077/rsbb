@@ -463,30 +463,32 @@ class ExecutingSimpleBenchmark: public ExecutingSingleRobotBenchmark {
 	}
 
 	void refbox_state_publish_timer_callback(const TimerEvent& = TimerEvent()) {
-		record_request_publisher_.publish(record_request_);
+		if(record_request_publisher_) record_request_publisher_.publish(record_request_);
 	}
 
 public:
-	ExecutingSimpleBenchmark(CoreSharedState& ss, Event const& event, boost::function<void()> end, string const& robot_name) :
+	ExecutingSimpleBenchmark(CoreSharedState& ss, Event const& event, boost::function<void()> end, string const& robot_name, bool do_record = true) :
 		ExecutingSingleRobotBenchmark(ss, event, end, robot_name),
 		refbox_state_publish_timer_(ss_.nh.createTimer(Duration(0.1), &ExecutingSimpleBenchmark::refbox_state_publish_timer_callback, this)) {
 
-		try{
-			stop_record_service_client_ = ss_.nh.serviceClient<StopRecordRequestRequest>("record_server/stop_record_request");
-			record_request_publisher_ = ss_.nh.advertise<RecordRequest> ("record_server/record_request", 1, true);
+		if(do_record){
+			try{
+				stop_record_service_client_ = ss_.nh.serviceClient<StopRecordRequestRequest>("record_server/stop_record_request");
+				record_request_publisher_ = ss_.nh.advertise<RecordRequest> ("record_server/record_request", 1, true);
 
 
-			// publish the record request for the rosbag record server
-			record_request_.record = true;
-			record_request_.benchmark_code = event_.benchmark_code;
-			record_request_.team = event_.team;
-//			record_request_.robot = "";
-			record_request_.run = event_.run;
-			record_request_.topics = event_.benchmark.record_topics;
-			record_request_publisher_.publish(record_request_);
+				// publish the record request for the rosbag record server
+				record_request_.record = true;
+				record_request_.benchmark_code = event_.benchmark_code;
+				record_request_.team = event_.team;
+//				record_request_.robot = "";
+				record_request_.run = event_.run;
+				record_request_.topics = event_.benchmark.record_topics;
+				record_request_publisher_.publish(record_request_);
 
-		} catch (const std::exception& exc) {
-			ROS_ERROR_STREAM("Could not advertise record services and topics");
+			} catch (const std::exception& exc) {
+				ROS_ERROR_STREAM("Could not advertise record services and topics");
+			}
 		}
 
 	}
@@ -1664,7 +1666,7 @@ ExecutingAllRobotsBenchmark (CoreSharedState& ss,
 		bool ok = false;
 		do {
 			try {
-				simple_benchmarks_.push_back (unique_ptr<ExecutingSimpleBenchmark> (new ExecutingSimpleBenchmark (ss, dummy_events_.back(), &ExecutingAllRobotsBenchmark::end, ri.robot)));
+				simple_benchmarks_.push_back (unique_ptr<ExecutingSimpleBenchmark> (new ExecutingSimpleBenchmark (ss, dummy_events_.back(), &ExecutingAllRobotsBenchmark::end, ri.robot, false)));
 				ok = true;
 			}
 			catch (const std::exception& exc) {
