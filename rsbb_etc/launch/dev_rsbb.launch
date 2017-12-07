@@ -2,14 +2,14 @@
   
   <group ns="rsbb">
     
-    <node name="bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" output="screen" respawn="true" >
+    <node name="bmbox" pkg="rsbb_bmbox" type="benchmark_script_server.py" respawn="true" output="screen">
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
       <rosparam file="$(find rsbb_etc)/config/benchmarks_description.yaml" command="load" />
       <param name="resources_directory" type="string" value="$(find rsbb_etc)/"/>
       <param name="benchmark_configs_directory" type="string" value="$(find rsbb_bmbox)/scripts/benchmark_configs/"/>
     </node>
     
-    <node name="record_server" pkg="rsbb_record_server" type="rsbb_record_server" output="screen" respawn="true">
+    <node name="record_server" pkg="rsbb_record_server" type="rsbb_record_server" respawn="true" output="screen">
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
     </node>
     
@@ -24,7 +24,7 @@
     </include>
     -->
     
-    <node name="refbox" pkg="roah_rsbb" type="core" respawn="true" output="screen">
+    <node name="refbox" pkg="roah_rsbb" type="core" respawn="true" output="screen" launch-prefix="xterm -e">
       <rosparam file="$(find rsbb_etc)/config/general.yaml" command="load" />
       <param name="benchmarks_file" type="string" value="$(find rsbb_etc)/config/benchmarks_description.yaml"/>
       <param name="schedule_file" type="string" value="$(find rsbb_etc)/config/schedule.yaml"/>

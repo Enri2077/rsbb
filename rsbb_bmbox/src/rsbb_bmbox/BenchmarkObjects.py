@@ -83,7 +83,7 @@ class RefBoxComm:
 			BmBoxState.START
 		)
 		
-		self.__exception_states = [RefBoxState.END, RefBoxState.STOP, RefBoxState.ERROR, RefBoxState.GLOBAL_TIMEOUT]
+		self.__exception_states = [RefBoxState.STOP, RefBoxState.ERROR, RefBoxState.GLOBAL_TIMEOUT]
 		
 		self.__refbox_state = RefBoxState()
 		self.__status = SystemStatus()
@@ -127,10 +127,15 @@ class RefBoxComm:
 	def __update_refbox_state(self, refbox_state):
 		self.__refbox_state = refbox_state
 		self.__refbox_state_observer.update(refbox_state)
-	
+		
+		print "\n\nbenchmark_state:        %s\ngoal_execution_state:   %s\nmanual_operation_state: %s\n" % (self._refbox_state_to_str(self.__refbox_state.benchmark_state),\
+		self._refbox_state_to_str(self.__refbox_state.goal_execution_state),\
+		self._refbox_state_to_str(self.__refbox_state.manual_operation_state))
+		
 	
 	
 	def __start_benchmark_callback(self, request):
+		rospy.loginfo("start_benchmark_callback")
 		
 		if not self.is_benchmark_running():
 			rospy.loginfo("start_benchmark_callback: benchmark not running")
@@ -143,6 +148,7 @@ class RefBoxComm:
 		return StartBenchmarkResponse(True)
 	
 	def __goal_started_callback(self, request):
+		rospy.loginfo("goal_started_callback")
 		
 		### TEST
 #		if self.tmp < 5:
@@ -166,6 +172,7 @@ class RefBoxComm:
 		return GoalStartedResponse(True)
 	
 	def __goal_complete_callback(self, request):
+		rospy.loginfo("goal_complete_callback")
 		
 		### TEST
 #		if self.tmp < 5 and request.refbox_state.benchmark_state == RefBoxState.GLOBAL_TIMEOUT:
@@ -194,6 +201,7 @@ class RefBoxComm:
 		return GoalCompleteResponse(True)
 	
 	def __referee_score_callback(self, request):
+		rospy.loginfo("referee_score_callback")
 		
 		try:
 			self.__current_referee_score = yaml.load(request.score)
@@ -204,6 +212,7 @@ class RefBoxComm:
 		return RefereeScoreResponse(True)
 	
 	def __manual_operation_complete_callback(self, request):
+		rospy.loginfo("manual_operation_complete_callback")
 		
 		### TEST
 #		if self.tmp > 5:
@@ -229,6 +238,7 @@ class RefBoxComm:
 		return ManualOperationCompleteResponse(True)
 	
 	def __stop_benchmark_callback(self, request):
+		rospy.loginfo("stop_benchmark_callback")
 		
 		self.__update_refbox_state(request.refbox_state)
 		
@@ -421,7 +431,6 @@ class RefBoxComm:
 		       bmbox_states=[BmBoxState.READY, BmBoxState.END], \
 		       benchmark_states=[RefBoxState.EXECUTING_BENCHMARK], \
 		       goal_execution_states=[RefBoxState.READY], \
-#		       goal_execution_states=[RefBoxState.READY, RefBoxState.GOAL_TIMEOUT], \
 		       manual_operation_states=[RefBoxState.READY]):
 			rospy.loginfo("end_benchmark: can not execute request")
 			return
@@ -475,9 +484,6 @@ class RefBoxComm:
 	
 	def check_preconditions(self, bmbox_states = None, benchmark_states = None, goal_execution_states = None, manual_operation_states = None, log_function = rospy.logwarn):
 		
-#		if not self.is_benchmark_running():
-#			return False
-		
 		if not (bmbox_states == None or self.__fsm.state() in bmbox_states):
 			log_function("check_preconditions: inconsistent bmbox states. expected [%s], current state [%s]", self._bmbox_states_to_str(bmbox_states), self._bmbox_state_to_str(self.__fsm.state()) )
 		
@@ -513,7 +519,6 @@ class RefBoxComm:
 		This function is deprecated.
 		"""
 		rospy.logdebug("RefBoxComm.is_goal_timed_out()")
-#		return self.__refbox_state.goal_execution_state == RefBoxState.GOAL_TIMEOUT
 		rospy.logwarn("is_goal_timed_out: deprecated")
 		return False
 	

@@ -772,13 +772,6 @@ public:
 		phase_ = PHASE_POST;
 		set_state(Time::now(), roah_rsbb_msgs::BenchmarkState_State_STOP, desc);
 
-		// if the benchmark has ended, it can be safely terminated by calling end_(), that destroys everything.
-		terminate_benchmark();
-//		if(refbox_state_.benchmark_state == RefBoxState::END){
-//		} else {
-//			terminate_benchmark();
-//		}
-
 	}
 
 	/*
@@ -808,10 +801,10 @@ public:
 			Rate r(5);
 			for(int i=0; i<10; i++){
 				ROS_ERROR("Failed to call \"bmbox/goal_complete\" service or bmbox refused to acknowledge that goal has timed out");
-				// TODO add waitForService?
+
 				if (goal_complete_service_.call(goal_complete) && goal_complete.response.result){
 					set_goal_execution_state(RefBoxState::READY);
-//					set_goal_execution_state(RefBoxState::ERROR); TODO use ERROR state ?
+//					set_goal_execution_state(RefBoxState::ERROR); // use ERROR state instead?
 					break;
 				}
 				r.sleep();
@@ -841,6 +834,15 @@ public:
 
 		// advertise that a timeout has occurred
 		timeout_pub_.publish(std_msgs::Empty());
+
+		StopBenchmark stop_benchmark_request;
+		stop_benchmark_request.request.refbox_state = refbox_state_;
+
+		if (stop_benchmark_service_.call(stop_benchmark_request) && stop_benchmark_request.response.result){
+			ROS_INFO("Called stop_benchmark service");
+		} else {
+			ROS_INFO("Tried to call stop_benchmark service but not available or bmbox refused to acknowledge that the benchmark is stopped");
+		}
 
 	}
 
@@ -902,27 +904,20 @@ public:
 
 	void send_referee_score(){
 
-		cout << "BEGIN send_referee_score" << endl;
+		cout << "send_referee_score" << endl;
 
 		YAML::Node scoring_node;
-		cout << "YAML::Node scoring_node" << endl;
 
 		for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());
-		cout << "for(ScoringItem i: scoring_) scoring_node.push_back(i.to_yaml_node());" << endl;
-
-		cout << "scoring_node.size(): " << scoring_node.size() << endl;
 
 		if(scoring_node.size()){
 			YAML::Emitter scoring_node_os;
-			cout << "YAML::Emitter scoring_node_os" << endl;
 
 			scoring_node_os << scoring_node;
-			cout << "scoring_node_os << scoring_node" << endl;
 
 			RefereeScore referee_score;
 			referee_score.request.score = scoring_node_os.c_str();//.as<string>();
 			referee_score.request.refbox_state = refbox_state_;
-			cout << "referee_score.request.refbox_state = refbox_state_;" << endl;
 
 			if (referee_score_service_.call(referee_score) && referee_score.response.success){
 				ROS_INFO("Called referee_score service");
@@ -1046,32 +1041,20 @@ public:
 	}
 
 	void terminate_benchmark() {
-		timeout_timer_.stop_pause(Time());
+
+		// If the benchmark is not executing (ended, stopped, timed out, etc) terminate, otherwise stop then terminate
 
 		if(refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK){
-			set_benchmark_state(RefBoxState::STOP);
+			stop();
 		}
 
-		if(refbox_state_.benchmark_state != RefBoxState::END){
+		timeout_timer_.stop_pause(Time());
 
-			set_benchmark_state(RefBoxState::STOP);
-
-			StopBenchmark stop_benchmark_request;
-			stop_benchmark_request.request.refbox_state = refbox_state_;
-
-			if (stop_benchmark_service_.call(stop_benchmark_request) && stop_benchmark_request.response.result){
-				ROS_INFO("Called stop_benchmark service");
-			} else {
-				ROS_INFO("Tried to call stop_benchmark service but not available or bmbox refused to acknowledge that the benchmark is stopped");
-			}
-
-			TerminateBenchmark terminate_benchmark_request;
-			if (terminate_benchmark_service_.call(terminate_benchmark_request) && terminate_benchmark_request.response.result){
-				ROS_INFO("Called terminate_benchmark service");
-			}else{
-				ROS_INFO("Tried to call terminate_benchmark service but not available or bmbox refused to terminate benchmark (maybe it was not running a script)");
-			}
-
+		TerminateBenchmark terminate_benchmark_request;
+		if (terminate_benchmark_service_.call(terminate_benchmark_request) && terminate_benchmark_request.response.result){
+			ROS_INFO("Called terminate_benchmark service");
+		}else{
+			ROS_INFO("Tried to call terminate_benchmark service but not available or bmbox refused to terminate benchmark (maybe it was not running a script)");
 		}
 
 		StopRecordRequest stop_record_request;
@@ -1106,12 +1089,23 @@ public:
 	}
 
 	void stop() {
+		printStates();
+		cout << endl << "stop" << endl << endl;
 
 		end_goal_execution();
 
 		set_benchmark_state(RefBoxState::STOP);
 
 		phase_post("");
+
+		StopBenchmark stop_benchmark_request;
+		stop_benchmark_request.request.refbox_state = refbox_state_;
+
+		if (stop_benchmark_service_.call(stop_benchmark_request) && stop_benchmark_request.response.result){
+			ROS_INFO("Called stop_benchmark service");
+		} else {
+			ROS_INFO("Tried to call stop_benchmark service but not available or bmbox refused to acknowledge that the benchmark is stopped");
+		}
 
 	}
 
@@ -1208,7 +1202,6 @@ public:
 		res.result.data = false;
 
 		if(!(((refbox_state_.goal_execution_state == RefBoxState::READY)
-//		||  (refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT)
 		)
 		&&  (refbox_state_.benchmark_state == RefBoxState::EXECUTING_BENCHMARK)
 		&&  (state_ == roah_rsbb_msgs::BenchmarkState_State_STOP
@@ -1237,8 +1230,8 @@ public:
 		return true;
 	}
 
-	/* TODO Maybe
-	 * Called by the benchmark script to abort the current
+	/* TO BE IMPLEMENTED Maybe ?
+	 * Called by the benchmark script to abort the current goal
 	 */
 //	bool abort_goal_callback(EndGoal::Request& req, EndGoal::Response& res){
 //		cout << "abort_goal_callback" << endl << endl;
@@ -1284,7 +1277,6 @@ public:
 	void bmbox_state_callback(BmBoxState::ConstPtr const& msg) {
 		printStates();
 
-//		if (msg->state == last_bmbox_state_->state) return;
 		last_bmbox_state_ = msg;
 
 		printStates();
@@ -1380,7 +1372,6 @@ public:
 
 			if (!(refbox_state_.goal_execution_state == RefBoxState::EXECUTING_GOAL
 			||  refbox_state_.goal_execution_state == RefBoxState::READY
-//			||  refbox_state_.goal_execution_state == RefBoxState::GOAL_TIMEOUT
 			)){
 				ROS_ERROR("BenchmarkState_State_WAITING_RESULT and NOT RefBoxState::EXECUTING_GOAL or RefBoxState::GOAL_TIMEOUT");
 			}
@@ -1401,7 +1392,7 @@ public:
 					ROS_INFO("Called bmbox/goal_complete service");
 					set_goal_execution_state(RefBoxState::READY, msg.has_generic_result()?msg.generic_result():"");
 				}else{
-					// TODO repeat call without relying on robot state callback
+					// TO BE IMPLEMENTED MAYBE repeat call without relying on robot state callback
 					ROS_ERROR("Failed to call bmbox/goal_complete service or bmbox refused to acknowledge that goal is completed and receive the result");
 				}
 

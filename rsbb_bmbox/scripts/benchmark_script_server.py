@@ -140,9 +140,8 @@ class BenchmarkServer(object):
 				
 				self.execute_request = None
 				
-				self.publish_system_status("restarting")
-				rospy.signal_shutdown("Restarting node")
-
+				
+				print "\n\n FINISHED EXECUTING SCRIPT \n\n"
 			
 			else:
 				if self._terminate_benchmark_request:
