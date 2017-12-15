@@ -5,7 +5,7 @@ benchmarks_description:
   scripted: true
   multiple_robots: false
   commands_devices: false
-  order: -100
+  order: 100
   default_goal_timeout: 30.0
   global_timeout: 120.0
   scoring:
@@ -24,7 +24,7 @@ benchmarks_description:
   multiple_robots: false
   commands_devices: false
   order: 2
-  timeout: 600.000
+  timeout: 600.0
   scoring:
     - Achievements:
       - { type: bool, desc: "The robot detects the door with changed state." }
@@ -45,7 +45,7 @@ benchmarks_description:
   multiple_robots: false
   commands_devices: false
   order: 3
-  timeout: 600.000
+  timeout: 600.0
   scoring:
     - Achievements:
       - { type: bool, desc: "The robot reaches the door when the door bell is rung by Dr. Kimble and correctly identifies him." }
@@ -73,7 +73,7 @@ benchmarks_description:
   multiple_robots: false
   commands_devices: true
   order: 4
-  timeout: 600.000
+  timeout: 600.0
   scoring:
     - Achievements:
       - { type: bool, desc: "The robot enters the room where Granny Annie is waiting." }
@@ -96,7 +96,7 @@ benchmarks_description:
   multiple_robots: false
   commands_devices: false
   order: -3
-  default_goal_timeout: 120.000
+  default_goal_timeout: 120.0
   global_timeout: 600.0
   record_topics:
     - "/rsbb/table_origin/pose"
@@ -110,7 +110,7 @@ benchmarks_description:
   multiple_robots: false
   commands_devices: false
   order: -2
-  default_goal_timeout: 120.000
+  default_goal_timeout: 120.0
   global_timeout: 600.0
   scoring:
     - Penalized Behaviors:
@@ -130,7 +130,7 @@ benchmarks_description:
   multiple_robots: true
   commands_devices: false
   order: 7
-  timeout: 120.000
+  timeout: 120.0
 
 
 
