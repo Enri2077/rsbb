@@ -72,9 +72,9 @@ def main():
 			
 			if rospy.is_shutdown(): break
 			
-			tf_listener.waitForTransform("/positioner_origin", "/table_origin", rospy.Time(0), rospy.Duration(1.0))
-			now = rospy.Time.now()
-			(ref_trans, ref_rot) = tf_listener.lookupTransform("/positioner_origin", "/table_origin", now)
+			tf_listener.waitForTransform("positioner_origin", "table_origin", rospy.Time(0), rospy.Duration(1.0))
+#			now = rospy.Time.now()
+			(ref_trans, ref_rot) = tf_listener.lookupTransform("positioner_origin", "table_origin", rospy.Time(0))
 			ref_euler = tf.transformations.euler_from_quaternion(ref_rot)
 			
 			print colors.INFO + "Item acquired" + colors.END
@@ -82,7 +82,7 @@ def main():
 			
 		except (tf.Exception):#tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
 			print colors.WARN + "Positioner not visible" + colors.END
-			continue
+			raise
 		
 		items_transform_output['items'].append({'trans': ref_trans, 'rot': ref_rot, 'id': item['id'], 'class': item['class'], 'instance': item['instance'], 'description': item['description']})
 	
@@ -91,6 +91,7 @@ def main():
 	confirm = ''
 	while confirm != 'y':
 		confirm = raw_input(colors.INPUT + "Confirm overwriting the output file 'objects_informations/items_with_pose.yaml' by typing 'y', to abort press Ctrl+C then ENTER (all measurements will be lost)\n" + colors.END)
+		if rospy.is_shutdown(): return
 	
 	with open(items_transform_output_path, 'w') as items_transform_output_file:
 		items_transform_output_file.write(yaml.dump(items_transform_output))

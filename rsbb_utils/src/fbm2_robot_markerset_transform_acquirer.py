@@ -64,11 +64,11 @@ if __name__ == '__main__':
 		
 		print "acquiring markerset_to_robot_transform"
 		
-		markerset_to_robot_transform = tf_listener.lookupTransform("/robot_markerset", "/testbed_origin", now)
+		markerset_to_robot_transform = tf_listener.lookupTransform("/robot_markerset", "/testbed_origin", rospy.Time(0))
 		
 		print "acquiring robot_to_markerset_transform"
 		
-		robot_to_markerset_transform = tf_listener.lookupTransform("/testbed_origin", "/robot_markerset", now)
+		robot_to_markerset_transform = tf_listener.lookupTransform("/testbed_origin", "/robot_markerset", rospy.Time(0))
 		
 		print "/robot_markerset to /testbed_origin", markerset_to_robot_transform
 		
