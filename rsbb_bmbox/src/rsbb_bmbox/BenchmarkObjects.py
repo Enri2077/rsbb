@@ -324,6 +324,98 @@ class RefBoxComm:
 		self.__current_manual_operation = None
 		return
 	
+	
+
+	def start_manual_operation(self, manual_operation_object=None):
+		"""
+		Requests a manual operation to the refbox.
+		A manual operation consists of a request to the refbox operator to do something.
+		It is possible to prompt the refbox operator to write a response, that will be returned as a string when the manual operation is completed.
+		This function is non-blocking, meaning the function will return immediatly.
+		:param ManualOperationObject manual_operation_object: The manual operation object, containing the request and the result of the of the manual operation. The result is set after the manual operation has been completed by the refbox operator.
+		"""
+		
+		rospy.logdebug("RefBoxComm.start_manual_operation()")
+		
+		if not isinstance(manual_operation_object, ManualOperationObject):
+			rospy.logerr("start_manual_operation: not isinstance(manual_operation_object, ManualOperationObject)")
+			return
+		
+		if not self.is_benchmark_running():
+			rospy.loginfo("start_manual_operation: benchmark not running")
+			return
+		
+		if self.__current_manual_operation != None:
+			rospy.logerr("start_manual_operation: another manual operation request is pending")
+			return
+		
+		if not self.check_preconditions(bmbox_states=[BmBoxState.READY, BmBoxState.END], manual_operation_states=[RefBoxState.READY]):
+			rospy.loginfo("start_manual_operation: can not execute request")
+			return
+		
+		
+		self.__current_manual_operation = manual_operation_object
+		
+		self.__fsm.update(BmBoxState.WAITING_MANUAL_OPERATION, self.__current_manual_operation.get_request())
+		
+		try:
+			
+			execute_manual_operation = rospy.ServiceProxy("bmbox/execute_manual_operation", ExecuteManualOperation)
+			manual_operation_payload = String(data = self.__current_manual_operation.get_request())
+			response = execute_manual_operation(manual_operation_payload)
+			
+			if response.result.data:
+				
+				self.__update_refbox_state(response.refbox_state)
+				
+				self.__refbox_state_observer.wait_manual_operation_state_transition(from_state = RefBoxState.READY, to_states = [RefBoxState.EXECUTING_MANUAL_OPERATION])
+#				self.__refbox_state_observer.wait_manual_operation_state_transition(from_state = RefBoxState.EXECUTING_MANUAL_OPERATION, to_states = [RefBoxState.READY])
+			
+			else:
+				rospy.logerr("start_manual_operation: Manual operation FAILED (refbox refused to execute the manual operation)")
+				
+		
+		except rospy.ServiceException, e:
+			rospy.logerr("Service call failed: %s" % (e))
+		
+		### normal post conditions:
+#		self.__fsm.update(BmBoxState.READY)
+#		self.__current_manual_operation = None
+		return
+
+	def wait_manual_operation(self):
+		"""
+		Waits until the manual operation is completed.
+		This function is blocking.
+		"""
+		rospy.logdebug("RefBoxComm.wait_manual_operation()")
+		
+		if not self.is_benchmark_running():
+			rospy.loginfo("wait_manual_operation: benchmark not running")
+			return
+		
+		if self.__current_manual_operation == None: #? or self.__current_manual_operation.has_been_completed():
+			rospy.logerr("wait_manual_operation: no manual operation request is pending")
+			return
+		
+		if not self.check_preconditions(bmbox_states=[BmBoxState.WAITING_MANUAL_OPERATION, BmBoxState.END], manual_operation_states=[RefBoxState.EXECUTING_MANUAL_OPERATION, RefBoxState.READY]):
+			rospy.loginfo("wait_manual_operation: can not execute request")
+			return
+		
+		
+		self.__refbox_state_observer.wait_manual_operation_state_transition(from_state = RefBoxState.EXECUTING_MANUAL_OPERATION, to_states = [RefBoxState.READY])
+		
+		
+		### normal post conditions:
+		self.__fsm.update(BmBoxState.READY)
+		self.__current_manual_operation = None
+		return
+		
+		
+		
+	
+	
+	
 	def request_goal(self, goal_object):
 		"""
 		Requests the refbox to send a goal to the robot.

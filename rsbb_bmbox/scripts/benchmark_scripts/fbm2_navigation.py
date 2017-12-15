@@ -74,12 +74,14 @@ class BenchmarkObject (BaseBenchmarkObject):
 		timed_out_waypoints = 0
 		reached_waypoints = 0
 		
-		# acquire marker-robot transform from config
+		# acquire markerset-robot transform from config
 		team_name = self.get_benchmark_team()
 		transform_path = path.join( path.join(rospy.get_param("~resources_directory"), "transforms" ), "transform-%s.yaml" % team_name )
+		
 		with open(transform_path, 'r') as transform_file:
-			marker_to_robot_transform = yaml.load(transform_file)["marker_to_robot_transform"]
-		print "team_name: ", team_name, "\ttransform_path: ", transform_path, "\tmarker_to_robot_transform: ", marker_to_robot_transform
+			markerset_to_robot_transform = yaml.load(transform_file)["markerset_to_robot_transform"]
+		
+		print "team_name: ", team_name, "\ttransform_path: ", transform_path, "\tmarkerset_to_robot_transform: ", markerset_to_robot_transform
 		
 		
 		while self.is_benchmark_running() and i < N:
@@ -141,7 +143,47 @@ class BenchmarkObject (BaseBenchmarkObject):
 			target_pose = Pose2D(*waypoints[i])
 			robot_pose = None
 			
-			robot_pose = Pose2D_from_tf_concatenation(self, "/robot", marker_to_robot_transform[0], marker_to_robot_transform[1], "/robot_markerset", "/testbed_origin", tf_broadcaster, tf_listener)
+			robot_pose = Pose2D_from_tf_concatenation(self, "/robot", markerset_to_robot_transform[0], markerset_to_robot_transform[1], "/robot_markerset", "/testbed_origin", tf_broadcaster, tf_listener, max_failed_attempts=5)
+			
+			# If the pose could not be acquired, ask the RefOp if the waypoint should be skipped or try again
+			while robot_pose == None:
+				rospy.logwarn("The position of the robot markerset could not be acquired")
+				
+				manual_operation_3 = ManualOperationObject("The position of the robot markerset could not be acquired!\nTry again or skip the waypoint? type 's' for skip, anything else to try again")
+				
+				self.request_manual_operation(manual_operation_3)
+				
+				if manual_operation_3.has_been_completed():
+					print "First Manual Operation result: %s" % manual_operation_3.get_result()
+					self.score["segment_%i"%(i+1)]["manual_operation"] = manual_operation_3.get_result()
+					self.save_and_publish_score()
+					
+					if manual_operation_3.get_result() == 's':
+						rospy.logwarn("Waypoint %i SKIPPED" % (i+1))
+						break
+						
+					else:
+						rospy.logwarn("Checking tracking again")
+					
+				else:
+					print "First Manual Operation NOT EXECUTED"
+					self.score["segment_%i"%(i+1)]["manual_operation"] = "not executed"
+				
+				self.save_and_publish_score()
+				
+				if not self.is_benchmark_running():
+					if self.has_benchmark_timed_out():
+						print "BENCHMARK TIMEOUT"
+						return
+					elif self.has_benchmark_been_stopped():
+						print "BENCHMARK STOPPED"
+						return
+					else:
+						print "BENCHMARK ABORTED"
+						return
+				
+				robot_pose = Pose2D_from_tf_concatenation(self, "/robot", markerset_to_robot_transform[0], markerset_to_robot_transform[1], "/robot_markerset", "/testbed_origin", tf_broadcaster, tf_listener, max_failed_attempts=5)
+				
 			
 			self.score["segment_%i"%(i+1)]["target_pose"] = yaml.dump(target_pose)
 			self.score["segment_%i"%(i+1)]["robot_pose"]  = yaml.dump(robot_pose)

@@ -62,7 +62,13 @@ class BenchmarkObject (BaseBenchmarkObject):
 		tf_broadcaster = tf.TransformBroadcaster()
 		
 		# Get items
-		items = self.params["items"]
+		items_transform_path = path.join( path.join(rospy.get_param("~resources_directory"), "objects_informations" ), "items_with_pose.yaml" )
+		try:
+			with open(items_transform_path, 'r') as items_transform_file:
+				items = yaml.load(items_transform_file)["items"]
+		except (EnvironmentError):
+			rospy.logerr("Could not open items pose file [%s]" % (items_transform_path))
+			return
 		
 		# Variables to compute score
 		i = 0
@@ -81,7 +87,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 			# Pick a random item and remove it from the list
 			item = random.choice(items)
 			items.remove(item)
-			
+			self.score["goal_%i"%i] = {}
 			
 			##########################################
 			#            MANUAL OPERATION            #
@@ -98,10 +104,10 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			if manual_operation_1.has_been_completed():
 				print "First Manual Operation result: %s" % manual_operation_1.get_result()
-				self.score["first_manual_operation"] = manual_operation_1.get_result()
+				self.score["goal_%i"%i]["manual_operation_1"] = manual_operation_1.get_result()
 			else:
 				print "First Manual Operation NOT EXECUTED"
-				self.score["first_manual_operation"] = "not executed"
+				self.score["goal_%i"%i]["manual_operation_1"] = "not executed"
 			
 			self.save_and_publish_score()
 			
@@ -116,20 +122,53 @@ class BenchmarkObject (BaseBenchmarkObject):
 					print "BENCHMARK ABORTED"
 					return
 			
-			now = rospy.Time.now()
-			
+#			now = rospy.Time.now()
 			
 			##########################################
 			#   ACQUIRE OBJECT POSITION WITH MOCAP   #
 			##########################################
 			
 			acquired_object_pose = None
-			acquired_object_pose = Pose2D_from_tf_concatenation(self, "/item", item['trans'], item['rot'], "/positioner_origin", "/table_origin", tf_broadcaster, tf_listener)
+			acquired_object_pose = Pose2D_from_tf_concatenation(self, "/item", item['trans'], item['rot'], "/positioner_origin", "/table_origin", tf_broadcaster, tf_listener, max_failed_attempts=3)
 			
-			if acquired_object_pose == None:
-				rospy.logerr("The position of the object could not be acquired")
-				break
+			
+			# If the position could not be acquired, try again by requesting to move the positioner
+			while acquired_object_pose == None:
+				rospy.logwarn("The position of the positioner could not be acquired")
 				
+				manual_operation_3 = ManualOperationObject("The position of the positioner could not be acquired!\nPlace in a different position the positioner and the %s (id: %d, instance: %s) on the table" % (item['description'], item['id'], item['instance']))
+				
+				self.request_manual_operation(manual_operation_3)
+				
+				
+				##########################################
+				#     CHECK RESULT AND UPDATE SCORE      #
+				##########################################
+				
+				if manual_operation_3.has_been_completed():
+					print "First Manual Operation result: %s" % manual_operation_3.get_result()
+					self.score["goal_%i"%i]["manual_operation_3"] = manual_operation_3.get_result()
+				else:
+					print "First Manual Operation NOT EXECUTED"
+					self.score["goal_%i"%i]["manual_operation_3"] = "not executed"
+				
+				self.save_and_publish_score()
+				
+				if not self.is_benchmark_running():
+					if self.has_benchmark_timed_out():
+						print "BENCHMARK TIMEOUT"
+						return
+					elif self.has_benchmark_been_stopped():
+						print "BENCHMARK STOPPED"
+						return
+					else:
+						print "BENCHMARK ABORTED"
+						return
+				
+				acquired_object_pose = Pose2D_from_tf_concatenation(self, "/item", item['trans'], item['rot'], "/positioner_origin", "/table_origin", tf_broadcaster, tf_listener, max_failed_attempts=3)
+				
+			
+			
 			##########################################
 			#            MANUAL OPERATION            #
 			##########################################
@@ -145,10 +184,10 @@ class BenchmarkObject (BaseBenchmarkObject):
 			
 			if manual_operation_2.has_been_completed():
 				print "First Manual Operation result: %s" % manual_operation_2.get_result()
-				self.score["first_manual_operation"] = manual_operation_2.get_result()
+				self.score["goal_%i"%i]["manual_operation_2"] = manual_operation_2.get_result()
 			else:
 				print "First Manual Operation NOT EXECUTED"
-				self.score["first_manual_operation"] = "not executed"
+				self.score["goal_%i"%i]["manual_operation_2"] = "not executed"
 			
 			self.save_and_publish_score()
 			
@@ -188,7 +227,6 @@ class BenchmarkObject (BaseBenchmarkObject):
 			#    CHECK RESULT i AND UPDATE SCORE     #
 			##########################################
 			
-			self.score["goal_%i"%i] = {}
 			self.score["goal_%i"%i]["timeout"] = goal.has_timed_out()
 			self.score["goal_%i"%i]["completed"] = goal.has_been_completed()
 			self.score["goal_%i"%i]["segment_time"] = segment_time.to_sec()
@@ -224,7 +262,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 					% (result_object_pose.x, result_object_pose.y, result_object_pose.theta, result['class'], result['instance']))
 				
 				# Evaluate position error
-				tf_broadcaster.sendTransform([result_object_pose.x, result_object_pose.y, 0], tf.transformations.quaternion_from_euler(0, 0, result_object_pose.theta), now, "result_%d" % i, "origin")
+				tf_broadcaster.sendTransform([result_object_pose.x, result_object_pose.y, 0], tf.transformations.quaternion_from_euler(0, 0, result_object_pose.theta), rospy.Time.now(), "result_%d" % i, "origin")
 				
 				# Evaluate class
 				is_class_correct = (result['class'] == item['class'])
@@ -265,8 +303,8 @@ class BenchmarkObject (BaseBenchmarkObject):
 				self.score["goal_%i"%i]['item_received'] = {}
 				self.score["goal_%i"%i]['item_received']['pose'] = [result_object_pose.x, result_object_pose.y, result_object_pose.theta]
 				self.score["goal_%i"%i]['item_received']['pose_units'] = ['m', 'm', 'rad']
-				self.score["goal_%i"%i]['item_received']['class'] = item['class']
-				self.score["goal_%i"%i]['item_received']['instance'] = item['instance']
+				self.score["goal_%i"%i]['item_received']['class'] = result['class']
+				self.score["goal_%i"%i]['item_received']['instance'] = result['instance']
 				
 				self.score["goal_%i"%i]['partial_score'] = {}
 				self.score["goal_%i"%i]['partial_score']['pose_score'] = pose_score

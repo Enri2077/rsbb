@@ -34,7 +34,14 @@ class BenchmarkObject (BaseBenchmarkObject):
 		
 		manual_operation_first = ManualOperationObject("First Manual Operation")
 		
-		self.request_manual_operation(manual_operation_first)
+		self.start_manual_operation(manual_operation_first)
+		
+		r = rospy.Rate(1) # 10hz
+		for blabla in range(10):
+			rospy.logwarn("TESTING MOCAP UNTRACK")
+			r.sleep()
+		
+		self.wait_manual_operation()
 		
 		##########################################
 		#     CHECK RESULT AND UPDATE SCORE      #
