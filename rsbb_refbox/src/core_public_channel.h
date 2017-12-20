@@ -47,6 +47,7 @@ class CorePublicChannel: boost::noncopyable, public roah_rsbb::RosPublicChannel 
 		msg.set_devices_switch_3(ss_.last_devices_state->switch_3 != 0);
 		msg.set_devices_dimmer(static_cast<uint32_t>(ss_.last_devices_state->dimmer));
 		msg.set_devices_blinds(static_cast<uint32_t>(ss_.last_devices_state->blinds));
+		msg.set_devices_door_win_detect(ss_.last_devices_state->door_win_detect != 0);
 
 		msg.set_tablet_display_map(ss_.tablet_display_map);
 		if (ss_.last_tablet) {
