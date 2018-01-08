@@ -4,9 +4,8 @@ RSBB: Referee, Scoring and Benchmarking Box
 This repository contains the ERL-SR (European Robotics League - Service Robots) Referee, Scoring and Benchmarking Box.
 Note that the name 'rockin' refers to the previous version of the competition.
 
-The repositories *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm
-and *roah_devices* from <mark>TODO</mark>
-are included as a git submodule.
+The repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
+This repo is shared with the roah_rsbb_comm_ros package.
 
 :warning: Please remember to always update right before the competitions!
 ```bash
@@ -14,7 +13,146 @@ git pull
 git submodule update --init
 ```
 
-## Running in the virtual machine
+
+# Installation
+
+
+## Dependencies
+
+You need to have installed a C++11 compiler, CMake, Boost, Protobuf and OpenSSL.
+
+If you are using Ubuntu, install the dependencies with:
+```bash
+sudo apt-get install build-essential cmake libboost-all-dev libprotoc-dev protobuf-compiler libssl-dev ros-$ROS_DISTRO-map-server
+```
+
+And install the Levenshtein module for Python:
+```bash
+sudo easy_install python-Levenshtein
+```
+<!---
+still necessary?
+-->
+
+Furthermore, you need to use at least ROS Hydro or ROS Indigo.
+To install and set up ROS, follow the instructions at http://wiki.ros.org/ROS/Installation/ .
+
+This version of the RSBB was tested with Ubuntu 14.04.5 LTS (Trusty Tahr) and ROS Indigo.
+
+The RSBB is a collection of ROS packages, and does not depend on other packages or software except the ones listed before.
+
+<!---
+TODO add the program to play sounds in the dependencies
+-->
+
+## Compiling
+
+After `git clone` and after every `git pull`, please do:
+```bash
+git submodule update --init
+```
+
+Compile as a normal ROS package in your Catkin workspace.
+
+
+## Network Setup
+
+The robots and the RSBB must be on the same network.
+The following graph shows an example of a possible network setup:
+
+![Net](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
+
+
+
+## Configuration
+
+The configuration parameters are documented in [configuration overview](/rsbb_etc/doc/configuration_overview.md)
+
+For the installation and test of the RSBB, configuring the following parameters in rsbb_etc/config/general.yaml should be sufficient:
+* `rsbb_broadcast_address` should be set to the `Bcast` of the interface you want to use, as reported by `ifconfig`.
+From the example of the network reported before, the broadcast address would be `10.2.0.255`.
+* `base_results_directory` and `base_record_directory` should be set to the path of the directory where the result files and the ROS bags are saved.
+These two directories can be the same.
+For example: `~/rsbb_output/`, in this case the directory "rsbb_output" should be created in home.
+
+
+## Running
+
+To run the full RSBB (including the devices node), execute this command in the terminal:
+```bash
+roslaunch rsbb_etc rsbb.launch
+```
+
+
+### Testing
+
+Now all benchmarks can be executed, but since a robot must be availabe on the network, it is often useful to test the communication with the RSBB by running the so called Dummy Robot.
+
+See `TODO: link`
+
+### Executing benchmarks
+
+`TODO: brief instructions to run benchmarks (from User Interface (TODO))`
+
+<!--- TODO
+For a test with dummy home devices use: `:warning: not implemented yet`
+```bash
+roslaunch rsbb_etc rsbb_dummy_devices.launch rsbb_host:=192.168.1.255 --screen
+```
+--->
+
+<!--- not necessary anymore, probably
+It may be necessary to delete the rqt cache for the new components to appear:
+```bash
+rm ~/.config/ros.org/rqt_gui.ini
+```
+--->
+
+<!--- never been used, as far as I know
+## Securing the RSBB
+<mark>TODO all section</mark>
+
+Make sure that you run these commands in whatever computer runs the RSBB:
+```bash
+sudo iptables -A INPUT -i lo -p tcp -m tcp --dport 11311 -j ACCEPT
+sudo iptables -A INPUT -p tcp -m tcp --dport 11311 -j DROP
+```
+
+You might add this to `/etc/rc.local`, before the `exit` command.
+
+To be able to connect from other computers safely, you must install
+the `openssh-server` package:
+```bash
+sudo apt-get install openssh-server
+```
+
+Make sure the `ROS_IP` variable is set correctly.
+
+#### Connecting from remote computers
+<mark>TODO all section</mark>
+
+To launch RSBB clients in other computers, you must have the
+`openssh-server` package installed in the server and be running the
+RSBB. Then, in the remote computer do:
+```bash
+ssh -L 127.0.0.1:11311:10.0.0.1:11311 rockin@10.0.0.1
+```
+
+In this example, the user is named `rockin` and the server is at
+`10.0.0.1`. The `127.0.0.1` at the beginning is mandatory.
+
+Make sure the `ROS_IP` variable is set correctly.
+
+Then, just run the client as if the ROS master were local:
+```bash
+roslaunch roah_rsbb roah_rsbb_client.launch
+```
+--->
+
+
+
+
+# Running in the virtual machine
 
 To test the RSBB without the need to install the software in this repository, a **temporary** virtual machine can be used with Virtual Box
 The appliance (an archive containing the virtual machine, the virtual hard drive and the configuration) can be downloaded from this **temporary** link:
@@ -49,94 +187,3 @@ hostname -I
 ```
 The output of this command will be one IP address, or multiple IP adresses in case the virtual machine is connected to more than one network.
 In this case, use the IP of the network to which the robots are connected.
-
-## Dependencies
-
-You need to have installed a C++11 compiler, CMake, Boost, Protobuf and OpenSSL.
-
-If you are using Ubuntu, install the dependencies with:
-```bash
-sudo apt-get install build-essential cmake libboost-all-dev libprotoc-dev protobuf-compiler libssl-dev ros-$ROS_DISTRO-map-server
-```
-
-And install the Levenshtein module for Python: <mark>TODO: still necessary?</mark>
-```bash
-sudo easy_install python-Levenshtein
-```
-
-Furthermore, you need to use at least ROS Hydro or ROS Indigo.
-To install and set up ROS, follow the instructions at http://wiki.ros.org/ROS/Installation/ .
-
-This version of the RSBB was tested with Ubuntu 14.04.5 LTS (Trusty Tahr) and ROS Indigo.
-
-The RSBB is a collection of ROS packages, and does not depend on other packages or software except the ones listed before.
-
-
-## Compiling
-
-After `git clone` and after every `git pull`, please do:
-```bash
-git submodule update --init
-```
-
-Compile as a normal ROS package in your Catkin workspace.
-
-## Running
-
-You can run the full RSBB including the Core, the Interface and the devices node with:
-```bash
-roslaunch rsbb_etc rsbb.launch
-```
-
-For a test with dummy home devices use: `:warning: TODO: not implemented yet`
-```bash
-roslaunch rsbb_etc rsbb_dummy_devices.launch rsbb_host:=192.168.1.255 --screen
-```
-
-The `rsbb_broadcast_address` configuration parameter should be set to the `Bcast` of the interface you want to use, as reported by `ifconfig`. Do not run the RSBB in the same computer as the robot.
-
-It may be necessary to delete the rqt cache for the new components to appear:
-```bash
-rm ~/.config/ros.org/rqt_gui.ini
-```
-
-
-## Securing the RSBB
-<mark>TODO all section</mark>
-
-Make sure that you run these commands in whatever computer runs the RSBB:
-```bash
-sudo iptables -A INPUT -i lo -p tcp -m tcp --dport 11311 -j ACCEPT
-sudo iptables -A INPUT -p tcp -m tcp --dport 11311 -j DROP
-```
-
-You might add this to `/etc/rc.local`, before the `exit` command.
-
-To be able to connect from other computers safely, you must install
-the `openssh-server` package:
-```bash
-sudo apt-get install openssh-server
-```
-
-Make sure the `ROS_IP` variable is set correctly.
-
-
-#### Connecting from remote computers
-<mark>TODO all section</mark>
-
-To launch RSBB clients in other computers, you must have the
-`openssh-server` package installed in the server and be running the
-RSBB. Then, in the remote computer do:
-```bash
-ssh -L 127.0.0.1:11311:10.0.0.1:11311 rockin@10.0.0.1
-```
-
-In this example, the user is named `rockin` and the server is at
-`10.0.0.1`. The `127.0.0.1` at the beginning is mandatory.
-
-Make sure the `ROS_IP` variable is set correctly.
-
-Then, just run the client as if the ROS master were local:
-```bash
-roslaunch roah_rsbb roah_rsbb_client.launch
-```
