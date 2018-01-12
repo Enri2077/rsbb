@@ -4,21 +4,24 @@ RSBB general benchmarks configuration
 An example of the general benchmarks configuration:
 
 ```yaml
-rsbb_broadcast_address: "10.0.0.255"
+rsbb_broadcast_address: "10.2.0.255"
 rsbb_port: 6666
 generate_schedule: true
 base_results_directory: "~/rsbb_output/"
 base_record_directory: "~/rsbb_output/"
 general_record_list:
-  - /tf
-  - /rosout
-  - /bmbox/map
-  - /bmbox/map_metadata
-  - /bmbox/bmbox_state
-  - /bmbox/refbox_state
-  - /bmbox/current_result
-  - /bmbox/benchmark_configuration
-  - /core/to_gui
+  - "map"
+  - "map_metadata"
+  - "current_benchmark_result"
+  - "bmbox/bmbox_state"
+  - "bmbox/refbox_state"
+  - "/devices/state"
+  - "/devices/bell"
+  - "/core/to_gui"
+  - "/core/to_public"
+  - "/timeout"
+  - "/rosout"
+  - "/tf"
 ```
 
 

@@ -1,9 +1,48 @@
-RSBB arch overview
+RSBB Architecture Overview
 =================================================
 
-The RSBB is a collection of ROS packages.
-The packages communicate through ROS topics and services.
+The RSBB (Referee, Scoring and Benchmarking Box) is the software that supports the execution of benchmarks in the European Robotics League - Service Robots.
+
+The execution of a benchmark consists primarily of measuring and evaluating in many ways the behaviour and interaction of the robot with the environment and people, and secondarily in the collection of the available informations that can later be analysed and made available as datasets.
+To achieve this, the RSBB communicates and interacts with the smart devices present in the testbed, the people and with the robot.
+
+The people are the actors of the benchmarks and the referee or a referee assistant.
+The communication with the people happens through the Graphical User Interface (GUI) available on the computer on which the software is run, and through an Android app running on a tablet.
+The Home Automation Devices are some smart devices such as lights and window blinds, that can be controlled remotely by the robots and the people.
+
+The communication with the robot allows to ask to execute a task or a series of goals, and to request and provide the informations useful for the context of the benchmark.
+The RSBB also communicates with the Home Automation Devices present in the testbed, in order to allow the robot to use them.
+
+Additionally the RSBB communicates with other systems that can provide informations about the robots, people or the environment.
+An example is the Motion Capture system (MoCap), that can accuratley measure the position of the robots, objects and people in the testbed.
+
+The benchmark executed by the robot can either be a simple goal, that corresponds to the execution of a manually scored task, or of an excange of goals and information between the robot and the RSBB.
+In this case, the benhmark is executed by running a Python script (called Benchmark Script, or BmScript in short), that commands and requests informations to the robot, collects information about the environment and, ultimatly, evaluates the result of the benchmark with a score.
+
+
+The RSBB is a collection of ROS packages that communicate with each other through ROS topics and services, and with the robots through Protobuf.
+The main component is the Core.
+It controls all defined zones and handles communication with the robots, devices, tablet and with the other components of the RSBB.
+It functions as the brain of the system, and must always be running.
+The Home Automation Devices are controlled by the roah_devices package that also connects to the core through ROS (Sec. `TODO`).
+The tablet runs an external Android application that connects to the core through the public channel (Sec. `TODO`).
+The benchmark scripts are executed by the rsbb_bmbox package.
+This package provides the interface with which the benchmark scripts can interact with the core in order to send commands and receive information from the robots and people.
+
+The RSBB also takes care to manage the informations collected during the benchmark, such as the score of the benchmark and the log of the informations collected during the benchmark, such as, the position of the robot or objects in the testbed throughout the execution, or informations about the status of the components of the software.
+
+`TODO: scriptable benchmarks, referee scoring, logging`
+
 `TODO: cont (robot, devices, mocap)`
+
+## External Architecture
+
+`TODO: graph with RSBB, devices, tablet (external communication)`
+
+
+## Internal Architecture
+
+`TODO: graph with RSBB nodes (internal communication)`
 
 ## Packages
 
@@ -16,10 +55,6 @@ The packages communicate through ROS topics and services.
 * rsbb_mocap_optitrack: This package provides the node that receives the motion capture data and published it in the ROS framework.
 * rsbb_benchmarking_messages: This package provides the messages and services used by the nodes for the communication between different packages.
 
-## Node Architecture
-
-`TODO: insert arch UML with all RSBB nodes`
-
 
 ## Interface and Communication
 
@@ -27,15 +62,13 @@ The packages communicate through ROS topics and services.
 
 The interface for the communication between the RSBB nodes is composed by ROS services and topics.
 
-The services and topics used to communicate between different packages are specified in rsbb_benchmarking_messages/msg.
+The services and topics used to communicate between different packages are specified in the rsbb_benchmarking_messages package.
 
 `TODO cont`
 
 ### Robot communication
 
 #### Network
-
-`TODO: insert network graph`
 
 The RSBB uses the protobuf_comm library for communication.
 All communication uses UDP, over two types of channels.

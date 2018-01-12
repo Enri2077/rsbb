@@ -60,13 +60,11 @@ Compile as a normal ROS package in your Catkin workspace.
 The robots and the RSBB must be on the same network.
 The following graph shows an example of a possible network setup:
 
-![Net](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
+![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
 
 
 
 ## Configuration
-
-The configuration parameters are documented in [configuration overview](/rsbb_etc/doc/configuration_overview.md)
 
 For the installation and test of the RSBB, configuring the following parameters in rsbb_etc/config/general.yaml should be sufficient:
 * `rsbb_broadcast_address` should be set to the `Bcast` of the interface you want to use, as reported by `ifconfig`.
@@ -74,6 +72,8 @@ From the example of the network reported before, the broadcast address would be 
 * `base_results_directory` and `base_record_directory` should be set to the path of the directory where the result files and the ROS bags are saved.
 These two directories can be the same.
 For example: `~/rsbb_output/`, in this case the directory "rsbb_output" should be created in home.
+
+The configuration parameters are documented in [configuration overview](/rsbb_etc/doc/configuration_overview.md).
 
 
 ## Running
@@ -93,6 +93,10 @@ See `TODO: link`
 ### Executing benchmarks
 
 `TODO: brief instructions to run benchmarks (from User Interface (TODO))`
+
+* auxiliary nodes (MoCap, etc)
+* utility nodes (link to doc/utility_scripts_overview)
+* ...
 
 <!--- TODO
 For a test with dummy home devices use: `:warning: not implemented yet`
