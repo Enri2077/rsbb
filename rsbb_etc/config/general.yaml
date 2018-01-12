@@ -1,8 +1,8 @@
 rsbb_broadcast_address: "10.2.0.255"
 rsbb_port: 6666
 generate_schedule: true
-base_results_directory: "~/refbox_output/"
-base_record_directory: "~/refbox_output/"
+base_results_directory: "~/rsbb_output/"
+base_record_directory: "~/rsbb_output/"
 general_record_list:
   - "map"
   - "map_metadata"
