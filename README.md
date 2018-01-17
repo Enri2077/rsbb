@@ -6,29 +6,25 @@ Note that the name 'rockin' refers to the previous version of the competition.
 
 Table of Content:
 
-* Installation guide (this README)
-* Architecture overview
-* Benchmark script overview
-* Benchmark script tutorial
-* Configuration documentation
-* Utility scripts documentation
+* [Installation guide (this README)](/README.md#Installation)
+* [Architecture overview](/rsbb_etc/doc/rsbb_arch_overview.md)
+* [Benchmark script overview](/rsbb_etc/doc/bmbox/bmbox_overview.md)
+* [Benchmark script tutorial](/rsbb_etc/doc/bmbox/benchmark_script_tutorial.md)
+* [Configuration documentation](/rsbb_etc/doc/configuration/configuration_overview.md)
+* [Utility scripts documentation](/rsbb_etc/doc/utils/utils_overview.md)
 
 
 
-
-
-The repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
-This repo is shared with the roah_rsbb_comm_ros package.
+# Installation
 
 :warning: Please remember to always update right before the competitions!
 ```bash
 git pull
 git submodule update --init
+
+Note that the repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
+This repo is shared with the roah_rsbb_comm_ros package.
 ```
-
-
-# Installation
-
 
 ## Dependencies
 
