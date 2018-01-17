@@ -69,7 +69,7 @@ Compile as a normal ROS package in your Catkin workspace.
 The robots and the RSBB must be on the same network.
 The following graph shows an example of a possible network setup:
 
-![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
+![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.svg)
 
 
 

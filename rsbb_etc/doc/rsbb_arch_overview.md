@@ -111,7 +111,7 @@ In particular, see the [BmBox documentation](/rsbb_etc/doc/bmbox/bmbox_overview.
 
 ## External communication
 
-![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
+![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.svg)
 
 ### Network
 

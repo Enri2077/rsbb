@@ -16,7 +16,7 @@ The script uses the functions and properties provided by these two layers to acq
 
 ## RefBox Communication Layer
 
-![RSBB Benchmark States Graph](/rsbb_etc/doc/images/RSBB_benchmark_states.png)
+![RSBB Benchmark States Graph](/rsbb_etc/doc/images/RSBB_benchmark_states.svg)
 
 The layer is implemented in the RefBoxComm class.
 The RefBox communication layer provides the functions to interact with the core, and specifically the functions used to request a goal or manual operation that are available in the BenchmarkObject class.
