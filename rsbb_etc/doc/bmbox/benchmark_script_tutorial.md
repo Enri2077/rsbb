@@ -10,7 +10,7 @@ The Simple Test Benchmark (STB) will be used as an example to learn how to devel
 A benchmark is defined in three files: the benchmarks_description.yaml configuration file, the benchmark's own configuration file and the benchmark's (python) script.
 The Simple Test Benchmark, used in this tutorial, is part of the default installation of the RSBB and can be downloaded from the RSBB repo here: `TODO: link to rsbb/rsbb_bmbox/benchmarks_scripts/STB, etc`.
 
-If you didn't already, install the entire RSBB by following these instructions: `TODO: link to rsbb installation instructions`.
+If you didn't already, install the entire RSBB by following the instructions in the [README](/README.md).
 
 
 ### The Code

@@ -4,6 +4,19 @@ RSBB: Referee, Scoring and Benchmarking Box
 This repository contains the ERL-SR (European Robotics League - Service Robots) Referee, Scoring and Benchmarking Box.
 Note that the name 'rockin' refers to the previous version of the competition.
 
+Table of Content:
+
+* Installation guide (this README)
+* Architecture overview
+* Benchmark script overview
+* Benchmark script tutorial
+* Configuration documentation
+* Utility scripts documentation
+
+
+
+
+
 The repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
 This repo is shared with the roah_rsbb_comm_ros package.
 

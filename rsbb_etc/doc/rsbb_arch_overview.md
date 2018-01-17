@@ -105,26 +105,15 @@ The interface for the communication between the RSBB nodes is composed by ROS se
 
 The services and topics used to communicate between different packages are specified in the rsbb_benchmarking_messages package.
 
-
-#### Script execution
-
-The benchmark scripts request goals and manual operations to the core through service calls.
-
-The core maintains three states regarding the benchmark execution, the Benchmark State, the Goal Execution State and the Manual Operation State.
-
-The Benchmark State is the main state of the benchmark, and describe the main phases of the execution.
-In particular, it defines whether the benchmark is in execution or if the benchmark is completed and how (end, stop, global timout, error).
-
-The Goal Execution State and the Manual Operation State are used to keep track of the current goal being executed by the robot and the current manual operation being executed by the RefBox operator.
-These states are updated in the core when certain events happen.
-Some of these events are external, like requests from the BmBox or by the robot, and some are internal to the core, like timeouts.
-
-![RSBB Benchmark States Graph](/rsbb_etc/doc/images/RSBB_benchmark_states.png)
+In particular, see the [BmBox documentation](/rsbb_etc/doc/bmbox/bmbox_overview.md) for details on the implementation of the communication with the core.
 
 
-### External communication
 
-#### Network
+## External communication
+
+![Network Example](/rsbb_etc/doc/images/example_RSBB_network_graph.png)
+
+### Network
 
 The RSBB uses the protobuf_comm library for communication.
 All communication uses UDP, over two types of channels.
@@ -137,7 +126,7 @@ The private channels use rsbb_port+1, rsbb_port+2 and so on without reusing.
 
 Note that, the RSBB and the robot can not be executed on the same computer.
 
-#### Public channel
+### Public channel
 
 The public channel is used to transmit information that is relevant to all robots unencrypted.
 The RSBB transmits the RoahRsbbBeacon every second, containing:
@@ -156,7 +145,7 @@ When a robot sets up a private channel, it should stop transmitting on the publi
 The tablet also transmits its state on the public channel, but robots should ignore it.
 Robots should only trust tablet information received in the RoahRsbbBeacon.
 
-#### Private channel
+### Private channel
 
 When a robot is active in a benchmark, a private channel is set up for communication.
 This channel is encrypted with the team password, to avoid interference from other sources.
@@ -183,9 +172,5 @@ The robot transmits the robot_state containing:
 Additional informations may be added to benchmark_state and robot_state when implementing further benchmarks.
 
 ## User Interface
-
-`TODO`
-
-## RoAH RSBB Comm
 
 `TODO`
