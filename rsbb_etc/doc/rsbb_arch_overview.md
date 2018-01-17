@@ -19,44 +19,85 @@ An example is the Motion Capture system (MoCap), that can accuratley measure the
 The benchmark executed by the robot can either be a simple goal, that corresponds to the execution of a manually scored task, or of an excange of goals and information between the robot and the RSBB.
 In this case, the benhmark is executed by running a Python script (called Benchmark Script, or BmScript in short), that commands and requests informations to the robot, collects information about the environment and, ultimatly, evaluates the result of the benchmark with a score.
 
+The RSBB also takes care to manage the informations collected during the benchmark, such as the score of the benchmark and the log of the informations collected during the benchmark (for example, the position of the robot or objects in the testbed throughout the execution of the benchmark, or informations about the status of the components of the software).
+
+## Additional features
+
+The Referee, Scoring and Benchmarking Box also supports the following features:
+
+Clock synchronization monitoring: The RSBB is not the best solution to synchronize robot clocks but is able to warn the referee if clock skew grows above a certain threshold.
+This warning is used both to alert the teams that the clock synchronization is at fault and to invalidate any received timestamps.
+
+Benchmark starting and stopping: Benchmarks can only start if robot clock skew is below 100 milliseconds.
+Stop can be issued manually by the referee, by the robot if it completed the benchmark or automatically by the RSBB if the time for the benchmark is over or if the robot does not declare that it is saving offline data.
+
+Devices communication: the testbed can include Home Automated Devices such as lights and window blinds.
+The RSBB provides an interface to control these devices, enabled only in certain benchmarks, so that the robot does not command the devices directly.
+The assistant referee can control the devices from the graphical interface.
+
+Tablet communication: a tablet device can be used to communicate with the robot.
+Tablet communication passes through the RSBB and is enabled only for certain benchmarks.
+
+Scoring: the RSBB keeps track of the scoring items that can be evaluated during the competition (not using offline data).
+For Task Benchmarks (TBMs), the assistant referee marks scoring items in the interface.
+For FBMs, scoring is handled by the rockin_benchmarking module.
+
+Online data: data produced by the robot during benchmarks falls in two categories: online and offline.
+Offline data is saved in a USB stick for latter analysis.
+Online data is transmitted to the RSBB.
+The RSBB displays and saves the data.
+
+Logging: the RSBB saves a full log for each benchmark.
+
+Referee interface: the RSBB includes a fully featured graphical interface to be used by the assistant referee.
+
+Public interface: the RSBB includes an informative interface without controls to be displayed to the public.
+
+Single client communication interface: the RSBB includes all features in a single communication interface.
+This way, participating teams only have to implement one communication mechanism.
+
+State information: the RSBB continuously displays the state of the benchmark, of the robot and of the other components of the system.
+
+Multiple simultaneous benchmarks: in some situations, it is useful to run task and functionality benchmarks simultaneously for different teams.
+The RSBB handles this transparently, supporting an arbitrary number of simultaneous benchmarks and  connected referee interfaces.
+To support multiple simultaneous benchmarks, the RSBB uses the concept of zones.
+A zone is a group of scheduled benchmarks, not necessarily associated with a physical area.
+The RSBB handles all known zones independently, but a robot may only be participating in a benchmark in a single zone simultaneously (during competitions, at least two zones are expected to exist: Task Benchmarks and Functionality Benchmarks zones).
+An arbitrary number of referee Interfaces can be used to control different zones or to provide multiple views of the same zone.
+
+
+
+## Packages
+
+`TODO: graph with RSBB, devices, tablet, robot (external communication) and RSBB nodes (internal communication)`
 
 The RSBB is a collection of ROS packages that communicate with each other through ROS topics and services, and with the robots through Protobuf.
 The main component is the Core.
 It controls all defined zones and handles communication with the robots, devices, tablet and with the other components of the RSBB.
 It functions as the brain of the system, and must always be running.
-The Home Automation Devices are controlled by the roah_devices package that also connects to the core through ROS (Sec. `TODO`).
-The tablet runs an external Android application that connects to the core through the public channel (Sec. `TODO`).
+The Home Automation Devices are controlled by the roah_devices package that also connects to the core through ROS (See the package's [README](/rsbb_devices_smartif/README.md)).
+The tablet runs an external Android application that connects to the core through the public channel (Sec. [Public channel](/rsbb_etc/doc/rsbb_arch_overview.md#Public-channel)).
 The benchmark scripts are executed by the rsbb_bmbox package.
 This package provides the interface with which the benchmark scripts can interact with the core in order to send commands and receive information from the robots and people.
 
-The RSBB also takes care to manage the informations collected during the benchmark, such as the score of the benchmark and the log of the informations collected during the benchmark, such as, the position of the robot or objects in the testbed throughout the execution, or informations about the status of the components of the software.
-
-`TODO: scriptable benchmarks, referee scoring, logging`
-
-`TODO: cont (robot, devices, mocap)`
-
-## External Architecture
-
-`TODO: graph with RSBB, devices, tablet (external communication)`
-
-
-## Internal Architecture
-
-`TODO: graph with RSBB nodes (internal communication)`
-
-## Packages
+The components of the system are contained in the following packages:
 
 * rsbb_etc: This package contains the configuration, documentation, the main launchfiles and resource material
+
 * rsbb_refbox: This package provides the rqt GUI nodes and the core node. The core node communicates with the robot and with the other nodes of the RSBB, namely with the rqt GUI, the BmBox, the roah_devices and the record server nodes.
+
 * rsbb_bmbox: This package provides the benchmark script server that executes the benchmark scripts (BmScripts) and communicates with the refbox. The bechmark scripts also communicate with the mocap node and external nodes.
+
 * rsbb_utils: This package provides python scripts used to acquire data that is used by benchmark scripts.
+
 * roah_devices: This package provides the node that interact with the Home Automation Devices.
+
 * rsbb_record_server: This package provides the node that records the rosbags during the execution of the benchmarks.
+
 * rsbb_mocap_optitrack: This package provides the node that receives the motion capture data and published it in the ROS framework.
+
 * rsbb_benchmarking_messages: This package provides the messages and services used by the nodes for the communication between different packages.
 
-
-## Interface and Communication
 
 ### Internal communication
 
@@ -64,9 +105,24 @@ The interface for the communication between the RSBB nodes is composed by ROS se
 
 The services and topics used to communicate between different packages are specified in the rsbb_benchmarking_messages package.
 
-`TODO cont`
 
-### Robot communication
+#### Script execution
+
+The benchmark scripts request goals and manual operations to the core through service calls.
+
+The core maintains three states regarding the benchmark execution, the Benchmark State, the Goal Execution State and the Manual Operation State.
+
+The Benchmark State is the main state of the benchmark, and describe the main phases of the execution.
+In particular, it defines whether the benchmark is in execution or if the benchmark is completed and how (end, stop, global timout, error).
+
+The Goal Execution State and the Manual Operation State are used to keep track of the current goal being executed by the robot and the current manual operation being executed by the RefBox operator.
+These states are updated in the core when certain events happen.
+Some of these events are external, like requests from the BmBox or by the robot, and some are internal to the core, like timeouts.
+
+![RSBB Benchmark States Graph](/rsbb_etc/doc/images/RSBB_benchmark_states.png)
+
+
+### External communication
 
 #### Network
 
