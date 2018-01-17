@@ -163,8 +163,6 @@ This parameter is used by the RefBox and by the BmBox.
 
 ### record_topics
 
-:warning: `Note: in non scripted benchmarks the recording is not implemented yet.`
-
 This parameter is not required and should be a sequence of strings (see examples in the beginning of this section and the following specification).
 
 The *record_topics* parameter specifies the topics recorded by the record server during the benchmark execution.
