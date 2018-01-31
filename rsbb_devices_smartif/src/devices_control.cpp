@@ -139,6 +139,7 @@ namespace rqt_roah_devices
   void DevicesControl::switch_1()
   {
     roah_devices::DevicesState::ConstPtr status = rcv_.last ();
+    if (!status) return;
     roah_devices::Bool b;
     b.request.data = ! status->switch_1;
     call_service ("/devices/switch_1/set", b);
@@ -148,6 +149,7 @@ namespace rqt_roah_devices
   void DevicesControl::switch_2()
   {
     roah_devices::DevicesState::ConstPtr status = rcv_.last ();
+    if (!status) return;
     roah_devices::Bool b;
     b.request.data = ! status->switch_2;
     call_service ("/devices/switch_2/set", b);
@@ -157,6 +159,7 @@ namespace rqt_roah_devices
   void DevicesControl::switch_3()
   {
     roah_devices::DevicesState::ConstPtr status = rcv_.last ();
+    if (!status) return;
     roah_devices::Bool b;
     b.request.data = ! status->switch_3;
     call_service ("/devices/switch_3/set", b);
