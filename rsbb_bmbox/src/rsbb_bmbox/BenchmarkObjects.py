@@ -718,33 +718,31 @@ class BaseBenchmarkObject (RefBoxComm, object):
 		self.__result_filename = None
 		
 		
-		try:
-			benchmark_configs_directory = rospy.get_param("~benchmark_configs_directory")
-			rospy.logdebug("benchmark_configs_directory: %s" % (benchmark_configs_directory))
-			
-			benchmark_configs_path = path.normpath(path.expanduser(benchmark_configs_directory))
-			
-			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
-			rospy.logdebug("benchmark_config_path: %s" % (benchmark_config_path))
-			
-			self.__result_object['benchmark_info']['params'] = "None"
-			
-			try:
-				with open(benchmark_config_path, 'r') as benchmark_config_file:
-					try:
-						self.__benchmark_config_object = yaml.load(benchmark_config_file)
-						self.__result_object['benchmark_info']['params'] = self.__benchmark_config_object
-					except yaml.YAMLError as e:
-						rospy.logerr("Raised YAML exception while loading benchmark script [%s]. Configuration file [%s] not valid.\n%s" % (self.get_benchmark_code(), benchmark_config_path, e))
-				
-			except IOError:
-				rospy.loginfo("No configuration file [%s] found for benchmark script [%s]" % (benchmark_config_path, self.get_benchmark_code()))
-				
-					
-			
-		except KeyError:
-			rospy.logerr("parameter benchmark_configs_directory not set in the configuration")
-			raise
+#		try:
+#			benchmark_configs_directory = rospy.get_param("~benchmark_configs_directory")
+#			rospy.logdebug("benchmark_configs_directory: %s" % (benchmark_configs_directory))
+#			
+#			benchmark_configs_path = path.normpath(path.expanduser(benchmark_configs_directory))
+#			
+#			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
+#			rospy.logdebug("benchmark_config_path: %s" % (benchmark_config_path))
+#			
+#			self.__result_object['benchmark_info']['params'] = "None"
+#			
+#			try:
+#				with open(benchmark_config_path, 'r') as benchmark_config_file:
+#					try:
+#						self.__benchmark_config_object = yaml.load(benchmark_config_file)
+#						self.__result_object['benchmark_info']['params'] = self.__benchmark_config_object
+#					except yaml.YAMLError as e:
+#						rospy.logerr("Raised YAML exception while loading benchmark script [%s]. Configuration file [%s] not valid.\n%s" % (self.get_benchmark_code(), benchmark_config_path, e))
+#				
+#			except IOError:
+#				rospy.loginfo("No configuration file [%s] found for benchmark script [%s]" % (benchmark_config_path, self.get_benchmark_code()))
+#			
+#		except KeyError:
+#			rospy.logerr("parameter benchmark_configs_directory not set in the configuration")
+#			raise
 	
 		
 		try:
@@ -876,8 +874,36 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	def setup(self, team, run):
 		
+		# load the cofiguration parameters of the benchmark script
+		self.__result_object['benchmark_info']['params'] = "None"
+		
+		try:
+			benchmark_configs_directory = rospy.get_param("~benchmark_configs_directory")
+			rospy.logdebug("benchmark_configs_directory: %s" % (benchmark_configs_directory))
+			
+			benchmark_configs_path = path.normpath(path.expanduser(benchmark_configs_directory))
+			
+			benchmark_config_path = path.join(benchmark_configs_path, "%s.yaml" % (self.get_benchmark_code()))
+			rospy.logdebug("benchmark_config_path: %s" % (benchmark_config_path))
+			
+			try:
+				with open(benchmark_config_path, 'r') as benchmark_config_file:
+					try:
+						self.__benchmark_config_object = yaml.load(benchmark_config_file)
+						self.__result_object['benchmark_info']['params'] = self.__benchmark_config_object
+					except yaml.YAMLError as e:
+						rospy.logerr("Raised YAML exception while loading benchmark script configuration. Configuration file [%s] not valid.\n%s" % (self.get_benchmark_code(), benchmark_config_path, e))
+		
+			except IOError:
+				rospy.loginfo("No configuration file [%s] found for benchmark script [%s]" % (benchmark_config_path, self.get_benchmark_code()))
+			
+		except KeyError:
+			rospy.logerr("parameter benchmark_configs_directory not set in the configuration")
+			raise
+		
+		# initialise the RefBox communication object
 		RefBoxComm.__init__(self)
-
+		
 		# insert the benchmark informations in the yaml result object
 		datetime_string = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__result_object['benchmark_info']['benchmark_code'] = self.get_benchmark_code()
