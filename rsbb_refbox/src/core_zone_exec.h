@@ -1093,6 +1093,7 @@ public:
 		cout << endl << "stop" << endl << endl;
 
 		end_goal_execution();
+		clear_manual_operation();
 
 		set_benchmark_state(RefBoxState::STOP);
 
