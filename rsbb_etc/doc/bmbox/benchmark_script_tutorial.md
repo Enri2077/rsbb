@@ -8,15 +8,14 @@ The Simple Test Benchmark (STB) will be used as an example to learn how to devel
 ## Benchmark Scripts
 
 A benchmark is defined in three files: the benchmarks_description.yaml configuration file, the benchmark's own configuration file and the benchmark's (python) script.
-The Simple Test Benchmark, used in this tutorial, is part of the default installation of the RSBB and can be downloaded from the RSBB repo here: `TODO: link to rsbb/rsbb_bmbox/benchmarks_scripts/STB, etc`.
-
+The Simple Test Benchmark, used in this tutorial, is part of the default installation of the RSBB and can be found here: [simple_test_benchmark.py](/rsbb_bmbox/scripts/benchmark_scripts/simple_test_benchmark.py).
 If you didn't already, install the entire RSBB by following the instructions in the [README](/README.md).
 
 
 ### The Code
 
-The Simple Test Benchmark follows a simple script (TODO rewrite): a first manual operation is executed, two goals are executed, then another manual operation is executed.
-The benchmark is implemented in the execute function of BenchmarkObject, that will be executed when the refbox runs this benchmark.
+The Simple Test Benchmark demonstrates the basic operations you can request to the RefBox: a first manual operation is executed, two goals are executed, then another manual operation is executed.
+The benchmark is implemented in the execute function of BenchmarkObject, that will be executed when the RefBox runs this benchmark.
 
 The BaseBenchmarkObject provides the functions needed to interact with the RefBox to request manual operation and goals, let's call them benchmark functions.
 
@@ -24,9 +23,7 @@ The BaseBenchmarkObject also provides these properties: params, referee_score an
 Python properties are objects that seem to be attributes, but are actually managed by get, set and del functions inside BaseBenchmarkObject.
 The score property is used to log information on the execution and the result of the benchmark.
 The referee_score property is used to read the score that the RefBox operator can change during and before the benchmark execution.
-
-`TODO: other useful functions like get_team_name`
-
+Other functions are available to obtain informations about the current run, like get_team_name and get_benchmark_run.
 
 ```python
 #!/usr/bin/env python
@@ -184,7 +181,7 @@ The benchmark configuration specifies parameters that are easily accessible in t
 
 #### The Benchmark's Description Configuration
 
-The following is extracted from the benchmarks description configuration. `TODO: link to benchmarks_description.md`
+The following is extracted from the benchmarks description configuration.
 
 
 ```yaml
@@ -207,6 +204,7 @@ The following is extracted from the benchmarks description configuration. `TODO:
     - "/rsbb/actor_markerset/pose2d"
 ```
 
+To know more about the benchmarks description, you can read [this documentation](/rsbb_etc/doc/configuration/benchmarks_description.md).
 
 #### The Benchmark's Configuration
 
@@ -271,7 +269,7 @@ The referee's score is not used, but we show how to access it from the script.
 Notice that we print it at the beginning of the execution, but the RefBox operator may have already changed some values, so the content of the referee's score may not be the default even at the start of the benchmark.
 
 In the STB we do not use any parameter, we print params only to show how to access the parameters of the benchmark.
-The parameters printed are the ones specified in the benchmark's configuration, `TODO: link to section "The Benchmark's Configuration"`
+The parameters printed are the ones specified in the benchmark's configuration, [see section](/rsbb_etc/doc/bmbox/benchmark_script_tutorial.md#The-Benchmark-s-Configuration).
 
 
 ```python
@@ -352,7 +350,7 @@ The timeout parameter defaults to 0, and in this case the goal timeout used by t
 
 To start the goal execution we call the benchmark function request_goal.
 This function is partially blocking, meaning that it should return quite soon since it only waits for the robot to start executing the goal.
-The request_goal benchmark function also returns if something exceptional happens that prevents the goal execution to be completed, like a global or goal timeout in the preparation phase (see robot communication chapter `TODO: link to chapter ...`), if the RefBox operator stops the benchmark or in case of communication failure.
+The request_goal benchmark function also returns if something exceptional happens that prevents the goal execution to be completed, like a global or goal timeout in the preparation phase (you can read about the robot communication in the documentation of the roah_rsbb_comm_ros package [here `TODO: absolute link to README`](TODO), if the RefBox operator stops the benchmark or in case of communication failure.
 
 Calling wait_goal_result let us wait until the goal execution terminates.
 This can be because the robot completed the goal, because the global or goal timeout occured, or because of a communication failure.
@@ -439,7 +437,7 @@ This string is only meant to be used as a human readable description and it may 
 ```
 We execute another manual operation, in the same way we did the first time, always logging the result in the score object and then calling save_and_publish_score.
 
-`TODO: can reuse the manual operation object?`
+Notice that the manual operation object previously used should not be "recycled", because its internal state refers to the first manual operation.
 
 
 ```python
