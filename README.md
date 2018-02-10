@@ -21,10 +21,10 @@ Table of Content:
 ```bash
 git pull
 git submodule update --init
+```
 
 Note that the repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
 This repo is shared with the roah_rsbb_comm_ros package.
-```
 
 ## Dependencies
 
