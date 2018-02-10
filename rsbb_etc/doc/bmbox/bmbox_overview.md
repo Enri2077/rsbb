@@ -3,7 +3,7 @@ Benchmarking Box Overview
 
 The Benchmarking Box (BmBox) is the package that provides the benchmark scripting framework and the component of the system that runs the scripts.
 
-`TODO graph: internal / external BmBox architecture (BmBox, server, scripts, RefBoxComm, BaseBenchmarkObject, BenchmarkObject)`
+![RSBB BmBox classes](/rsbb_etc/doc/images/RSBB_BmBox_classes_arch.svg)
 
 
 # Script Framework
@@ -45,7 +45,7 @@ The remaining transitions are triggered due to the core's internal events (e.g.,
 The core maintains three states relative to the BmBox communication, the Benchmark State, the Goal Execution State and the Manual Operation State.
 
 The Benchmark State is the main state of the benchmark, and describes the main phases of the benchmark execution.
-In particular, it defines whether the benchmark is running or if the benchmark is completed (end, stop, global timout, error).
+In particular, it defines whether the benchmark is running or if the benchmark is completed (end, stop, global timeout, error).
 
 The Goal Execution State and the Manual Operation State are used to keep track of the current goal being executed by the robot and the current manual operation being executed by the RefBox operator.
 

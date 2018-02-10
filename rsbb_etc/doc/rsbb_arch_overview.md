@@ -69,7 +69,7 @@ An arbitrary number of referee Interfaces can be used to control different zones
 
 ## Packages
 
-`TODO: graph with RSBB, devices, tablet, robot (external communication) and RSBB nodes (internal communication)`
+![RSBB internal and external communication](/rsbb_etc/doc/images/RSBB_int_ext_comm.svg)
 
 The RSBB is a collection of ROS packages that communicate with each other through ROS topics and services, and with the robots through Protobuf.
 The main component is the Core.
