@@ -269,7 +269,7 @@ The referee's score is not used, but we show how to access it from the script.
 Notice that we print it at the beginning of the execution, but the RefBox operator may have already changed some values, so the content of the referee's score may not be the default even at the start of the benchmark.
 
 In the STB we do not use any parameter, we print params only to show how to access the parameters of the benchmark.
-The parameters printed are the ones specified in the benchmark's configuration, [see section](/rsbb_etc/doc/bmbox/benchmark_script_tutorial.md#The-Benchmark-s-Configuration).
+The parameters printed are the ones specified in the benchmark's configuration, [see section](#the-benchmarks-configuration).
 
 
 ```python
