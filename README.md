@@ -43,7 +43,7 @@ sudo easy_install python-Levenshtein
 still necessary?
 -->
 
-Furthermore, you need to use at least ROS Hydro or ROS Indigo.
+:warning: The RSBB is not compatible with Ubuntu 16.04, you need to use ROS Hydro on Ubuntu 12.04.x or ROS Indigo on Ubuntu 14.04.x.
 To install and set up ROS, follow the instructions at http://wiki.ros.org/ROS/Installation/ .
 
 This version of the RSBB was tested with Ubuntu 14.04.5 LTS (Trusty Tahr) and ROS Indigo.
