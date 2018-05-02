@@ -350,7 +350,7 @@ The timeout parameter defaults to 0, and in this case the goal timeout used by t
 
 To start the goal execution we call the benchmark function request_goal.
 This function is partially blocking, meaning that it should return quite soon since it only waits for the robot to start executing the goal.
-The request_goal benchmark function also returns if something exceptional happens that prevents the goal execution to be completed, like a global or goal timeout in the preparation phase (you can read about the robot communication in the documentation of the roah_rsbb_comm_ros package [here `TODO: absolute link to README`](TODO), if the RefBox operator stops the benchmark or in case of communication failure.
+The request_goal benchmark function also returns if something exceptional happens that prevents the goal execution to be completed, like a global or goal timeout in the preparation phase (you can read about the robot communication in the documentation of the roah_rsbb_comm_ros package [here](https://github.com/rockin-robot-challenge/at_home_rsbb_comm_ros), if the RefBox operator stops the benchmark or in case of communication failure.
 
 Calling wait_goal_result let us wait until the goal execution terminates.
 This can be because the robot completed the goal, because the global or goal timeout occured, or because of a communication failure.

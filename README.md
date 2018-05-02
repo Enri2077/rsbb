@@ -12,7 +12,7 @@ Table of Content:
 * [Benchmark script tutorial](/rsbb_etc/doc/bmbox/benchmark_script_tutorial.md)
 * [Configuration documentation](/rsbb_etc/doc/configuration/configuration_overview.md)
 * [Utility scripts documentation](/rsbb_etc/doc/utils/utils_overview.md)
-
+* [Smartif HAD documentation](/rsbb_devices_smartif/README.md)
 
 
 # Installation
@@ -23,8 +23,8 @@ git pull
 git submodule update --init
 ```
 
-Note that the repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm `TODO update name after moving repo` is included as a git submodule.
-This repo is shared with the roah_rsbb_comm_ros package.
+Note that the repository *RoAH RSBB Comm* from https://github.com/rockin-robot-challenge/at_home_rsbb_comm is included as a git submodule.
+This repo is shared with the [roah_rsbb_comm_ros](https://github.com/rockin-robot-challenge/at_home_rsbb_comm_ros) package.
 
 ## Dependencies
 
@@ -43,7 +43,7 @@ sudo easy_install python-Levenshtein
 still necessary?
 -->
 
-:warning: The RSBB is not compatible with Ubuntu 16.04, you need to use ROS Hydro on Ubuntu 12.04.x or ROS Indigo on Ubuntu 14.04.x.
+:warning: The RSBB is not compatible with Ubuntu 16.04, you need to use ROS Indigo on Ubuntu 14.04.x (or ROS Hydro on Ubuntu 12.04.x).
 To install and set up ROS, follow the instructions at http://wiki.ros.org/ROS/Installation/ .
 
 This version of the RSBB was tested with Ubuntu 14.04.5 LTS (Trusty Tahr) and ROS Indigo.
@@ -95,17 +95,19 @@ roslaunch rsbb_etc rsbb.launch
 
 ### Testing
 
-Now all benchmarks can be executed, but since a robot must be availabe on the network, it is often useful to test the communication with the RSBB by running the so called Dummy Robot.
-
-See `TODO: link`
+Now all benchmarks can be executed, but since a robot must be availabe on the network, it is often useful to test the communication with the RSBB by running the so called Dummy Robot, from the [roah_rsbb_comm_ros](https://github.com/rockin-robot-challenge/at_home_rsbb_comm_ros) package.
 
 ### Executing benchmarks
 
-`TODO: brief instructions to run benchmarks (from User Interface (TODO))`
+`TODO: brief instructions to run benchmarks`
+Running a benchmark is similar to the previous (deprecated) verison of the RSBB.
+Some instructions are available in the [RSBBv1 documentation (deprecated)](/rsbb_etc/doc/RoAH_RSBBv1_Manual_deprecated.pdf).
 
+<!--- TODO
 * auxiliary nodes (MoCap, etc)
 * utility nodes (link to doc/utility_scripts_overview)
 * ...
+--->
 
 <!--- TODO
 For a test with dummy home devices use: `:warning: not implemented yet`
@@ -123,7 +125,6 @@ rm ~/.config/ros.org/rqt_gui.ini
 
 <!--- never been used, as far as I know
 ## Securing the RSBB
-<mark>TODO all section</mark>
 
 Make sure that you run these commands in whatever computer runs the RSBB:
 ```bash
@@ -142,7 +143,6 @@ sudo apt-get install openssh-server
 Make sure the `ROS_IP` variable is set correctly.
 
 #### Connecting from remote computers
-<mark>TODO all section</mark>
 
 To launch RSBB clients in other computers, you must have the
 `openssh-server` package installed in the server and be running the
@@ -164,7 +164,7 @@ roslaunch roah_rsbb roah_rsbb_client.launch
 
 
 
-
+<!---
 # Running in the virtual machine
 
 To test the RSBB without the need to install the software in this repository, a **temporary** virtual machine can be used with Virtual Box
@@ -200,3 +200,7 @@ hostname -I
 ```
 The output of this command will be one IP address, or multiple IP adresses in case the virtual machine is connected to more than one network.
 In this case, use the IP of the network to which the robots are connected.
+--->
+
+
+

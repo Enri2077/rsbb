@@ -173,4 +173,9 @@ Additional informations may be added to benchmark_state and robot_state when imp
 
 ## User Interface
 
-`TODO`
+`TODO: insert images from new GUI`
+
+For reference, see the [RSBBv1 documentation (deprecated)](/rsbb_etc/doc/RoAH_RSBBv1_Manual_deprecated.pdf).
+
+
+

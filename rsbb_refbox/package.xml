@@ -4,8 +4,11 @@
   <version>0.0.0</version>
   <description>RoCKIn@Home Referee, Scoring and Benchmarking Box</description>
 
-  <maintainer email="enrico.piazza@polimi.it">Enrico Piazza</maintainer>
+  <maintainer email="enrico.piazza@polimi.it">Enrico Piazza</maintainer> <!-- probably not anymore -->
+
+  <author email="enrico.piazza@polimi.it">Enrico Piazza</author>
   <author email="jreis@isr.ist.utl.pt">João Reis</author>
+
   <license>LGPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>

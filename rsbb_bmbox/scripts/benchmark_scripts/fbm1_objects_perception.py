@@ -285,7 +285,7 @@ class BenchmarkObject (BaseBenchmarkObject):
 				if abs(w_err) < ROT_ACCURACY : w_err = 0.0
 				
 				pose_err_trans = sqrt(pow(x_err, 2) + pow(y_err, 2))
-#				if pose_err_trans > max_pose_error : pose_err_trans = 1.0 # TODO correct with new version from Lisbon 2017 Aug event
+#				if pose_err_trans > max_pose_error : pose_err_trans = 1.0 # corrected with version from Lisbon 2017 Aug event
 				
 				pose_err_rot = abs(w_err) / pi
 				if pose_err_rot > 1 : pose_err_rot = 1.0

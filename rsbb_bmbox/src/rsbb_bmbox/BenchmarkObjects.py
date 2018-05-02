@@ -836,9 +836,9 @@ class BaseBenchmarkObject (RefBoxComm, object):
 			yaml.dump(self.__result_object, outfile, default_flow_style=False)
 	
 	def save_and_publish_score(self):
-#		"""
-#		TODO
-#		"""
+		"""
+		Writes the result (containing the score) to a file and publishes it
+		"""
 		self.__result_object['benchmark_info']['end_description'] = self.get_end_description()
 		self.__result_object['benchmark_info']['end_time'] = datetime.now(tzlocal()).strftime(self.__date_string_format)
 		self.__result_object['referee_score'] = self.get_referee_score()
@@ -860,15 +860,15 @@ class BaseBenchmarkObject (RefBoxComm, object):
 	
 	
 	def get_benchmark_run(self):
-#		"""
-#		TODO
-#		"""
+		"""
+		Returns the run for the current benchmark, obtained from the RefBox
+		"""
 		return self.__result_object['benchmark_info']['run']
 	
 	def get_benchmark_team(self):
-#		"""
-#		TODO
-#		"""
+		"""
+		Returns the team name for the current benchmark, obtained from the RefBox
+		"""
 		return self.__result_object['benchmark_info']['team']
 
 	

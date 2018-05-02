@@ -3,8 +3,8 @@
   <name>rsbb_bmbox</name>
   <version>0.0.0</version>
   <description>The rsbb_bmbox package</description>
-  <maintainer email="enrico.piazza@polimi.it">Enrico Piazza</maintainer>
-  <license>BSD</license>
+  <maintainer email="enrico.piazza@polimi.it">Enrico Piazza</maintainer> <!-- probably not anymore -->
+  <license>LGPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roslaunch</build_depend>
