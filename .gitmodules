@@ -1,6 +1,3 @@
 [submodule "rsbb_refbox/comm"]
 	path = rsbb_refbox/comm
-	url = https://github.com/Enri2077/at_home_rsbb_comm.git
-[submodule "roah_devices"]
-	path = roah_devices
-	url = https://github.com/joaocgreis/roah_devices.git
+	url = https://github.com/rockin-robot-challenge/at_home_rsbb_comm.git
